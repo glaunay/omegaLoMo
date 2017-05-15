@@ -2,6 +2,9 @@
 
 import xml.etree.ElementTree as ET
 import sys
+import json
+from os import listdir
+from os.path import isfile, join
 '''
 .....
 This implements the common element of the pipeline
@@ -19,6 +22,9 @@ class homologPair(object):
         self.query = idQuery    # A uniprot identifier or a unirpot object
         self.param = param  ## store homology relationship quality descriptor %sim/%cov...
 
+    def __str__(self):
+        return str(self.__dict__)
+
     def serialize(self):
         pass
 
@@ -30,21 +36,14 @@ class homologPair(object):
 This stores the colloction of homologs to a single Template element
 '''
 class hOmegaVector(object):
-    def __init__(self, idTemplate, blastFile, idQueryList):
-        self.blastFile = blastFile
+    def __init__(self, idTemplate= None, data = None):
         self.idTemplate = idTemplate
-        self.idQueryList = idQueryList
-        self.data = [] ## a list of homolPair objects
-        self.initialize()
+        self.data = data ## a list of homolPair objects
 
-    def initialize(self):
-            #### Pouvoir recuperer Id de la Query
-        resultParse = self._xmlRead(self.blastFile, self.idQueryList)
-        for idQuery in resultParse.keys():
-            self.data.append(homologPair(self.idTemplate, idQuery, resultParse[idQuery]))
-
+    def __hash__(self):
+        return hash(self.idTemplate)
     def _xmlRead(self, xmlFile, idQueryList):
-        
+
         allQIdList = {}
         idList = []
         with open(idQueryList, 'r') as f:
@@ -60,6 +59,7 @@ class hOmegaVector(object):
         parent_map = {c:p for p in root.iter() for c in p}
 
         blast_all_iter_node = root.find('./BlastOutput_iterations')
+        self.idTemplate = root.find('./BlastOutput_query-def').text.split('|')[1]
         lastIter_subnode=root.findall('./BlastOutput_iterations/Iteration/Iteration_iter-num')[-1]
         lastIter_number=lastIter_subnode.text
         for iter_node in root.findall('./BlastOutput_iterations/Iteration'):
@@ -105,7 +105,16 @@ class hOmegaVector(object):
                                       hit.find("Hit_hsps/Hsp/Hsp_evalue").text]))
                         
                         coverList.append((Hfrom, Hto))
-        return allQIdList
+        
+        # Si on trouve des ID Query homologue a notre Template
+        if len(allQIdList) > 0:
+            for idQuery in allQIdList:
+                if not self.data:
+                    self.data = []
+                self.data.append(homologPair(self.idTemplate, idQuery, allQIdList[idQuery]))
+            return self.data
+        else:
+            return None 
 
     @property
     def empty(self): #True/False
@@ -116,7 +125,9 @@ class hOmegaVector(object):
         return self.data[0].template
 
     def serialize(self):
-        pass
+        return { 'template ID' : self.idTemplate,
+                 'Pairs Data' : [ d.__dict__ for d in self.data ]
+                }
 
     def deSerialize(self):
         pass
@@ -124,52 +135,96 @@ class hOmegaVector(object):
 This is the collection of hOmegaVector
 This has the dimension of the number of template with query hits
 Guillaume would like us to implement an access by a query key !!
+
+
+                
+
+
 '''
 
-class hOmegaSet(object):
-    def __init__(self, fullData):
-        self.fulldata = fullData
+#self.hOmegaData.add(xmlFile = blastPath, idQueryList=self.data['idQueryList'])
+
+
+class HomegaSet(object):
+    def __init__(self, **kwargs):
         self.data = [] # this sis the collection of hOmegaVector
         self.dict = {} # store array addres of item to be accessed through template id as a key
-        self.initialize()
 
-    def initialize(self):
-        # Pour chaque id template --> Vecteur --> Dict (Pour add seulement ?)
-        for idQ in self.fulldata['blastFilesList'].keys():
-            try:
-                self.data.append(hOmegaVector(idQ , self.fulldata['blastFilesList'][idQ], self.fulldata['idQueryList'] ))
-                self.dict[self.fulldata['fullData'].index(idQ)] = [idQ, self.data[-1]]
-            except ValueError:
-                print 'The vector cannot be created'
-        print self.dict
+# Constructor mandatoray arguments
+        if 'path' not in kwargs and 'bean' not in kwargs:
+            raise ValueError ("Provide a blast results folders tree or a serialized omegaSet")
+        if 'path' not in kwargs and 'queryIdList' not in kwargs:
+             raise ValueError ("If you provide a blast results folders tree, you must supply a query list")
+        else :
+            self.idQueryList = kwargs["queryIdList"]
+
+        if 'path' in kwargs:
+            for xmlFileName in self._findXml(kwargs['path']):
+                self.add(xmlFile=xmlFileName)
+        
+        elif 'bean' in kwargs:
+            self.deSerialize(kwargs['bean'])
+    
+    def _findXml(self, path):
+        for rep in listdir(path):
+            if not rep.startswith('.'):
+                blastPath = path + rep + "/logs/blast.out"
+                yield blastPath
+
     def add(self, **kwargs):
         # item is a list or not , if not put it in a list
         # append item to
-        try:
-            if not idTemplate in self.dict.keys():
-                if 'xmlFile' in kwargs:
-                    hOmegaVectorObj = hOmegaVector(xmlFile=kwargs['xmlFile'], idQueryList=self.idQueryList)
-                    if not hOmegaVectorObj.empty:
-                        self.data.append(hOmegaVectorObj)
-                        # hOmegaVectorObj.id referencer dans le dict
-        except ValueError:
-            print 'We already know the queries id for the given template'
+        if 'xmlFile' in kwargs:
+            hOmegaVectorObj = hOmegaVector()
+        if not hOmegaVectorObj._xmlRead( kwargs['xmlFile'], self.idQueryList):
+            return
 
-    def __getitem__(self, tup): ## return hOmegaVector object (or a list of ?? if query is the accessor)
+        if hOmegaVectorObj.idTemplate in self.dict:
+            raise ValueError( str(hOmegaVectorObj.idTemplate) + " is already part of the set")
+# Store current vetor in set
+        self.data.append(hOmegaVectorObj)
+        self.dict[hOmegaVectorObj.idTemplate] = hOmegaVectorObj
+       
+    def __getitem__(self, value):
+        if value not in  self.dict:
+            return None
+
+        return self.dict[value]
+
+    def OLD__getitem__(self, tup): ## return hOmegaVector object (or a list of ?? if query is the accessor)
         # x can be a sString or an index
         # A VOIR AVEC GUILLAUME (accesseur sous forme de matrix ou juste un Id de Template qui retourn les Querys)
         x, y = tup
-        dataX = [hpair for hpair in self.dict[x][1].data]
-        dataY = [hpair for hpair in self.dict[y][1].data]
-        returnString = 'Template X : '+ dataX[0].template + ' <--> Queries X : ' + ' '.join([hpair.query for hpair in dataX])
-        returnString += '\nTemplate Y : '+dataY[0].template + ' <--> Queries Y : ' + ' '.join([hpair.query for hpair in dataY])
+        dataX = [hpair for hpair in self.dict[x].data]
+        dataY = [hpair for hpair in self.dict[y].data]
+        if len(dataX) > 0 :
+            returnString = 'Template X : '+ dataX[0].template + ' <--> Queries X : ' + ' '.join([hpair.query for hpair in dataX])
+        else :
+            returnString += 'Empty Data for Template X'
+        if len(dataY) > 0 :
+            returnString += '\nTemplate Y : '+dataY[0].template + ' <--> Queries Y : ' + ' '.join([hpair.query for hpair in dataY])
+        else :
+            returnString += '\nEmpty Data for Template Y'
         return  returnString
 
-    def serialize(self):
-        pass
+    def __str__(self):
+        return json.dumps({ "vectors" : [ v.serialize() for v in self.data ], 
+                 "queryID" : self.idQueryList })
 
-    def deSerialize(self):
-        pass
+    def serialize(self, path):
+        json.dump({ "vectors" : [ v.serialize() for v in self.data ], 
+                 "queryID" : self.idQueryList }, file(path, 'w'))
+
+    def deSerialize(self, path):
+        with open (path, 'r') as file:
+            data = json.load(file)
+            fetch_data = [ hOmegaVector(v['template ID'], [homologPair( hp['template'], hp['query'], hp['param'])  for hp in v['Pairs Data']]) for v in data['vectors'] ]
+            print fetch_data
+            for vector in fetch_data:
+                if vector.idTemplate in self.dict:
+                    print 'Existe deja'
+                else:
+                    self.data.append(vector)
 
 class fullMatrix(object):
     def __init__(self, data):
@@ -178,10 +233,9 @@ class fullMatrix(object):
         self.hOmegaData = None
 
     def createSet(self):
-        self.hOmegaData = hOmegaSet(self.data)
-        return
+        pass
 
-    def reduce(self, hOmegaSet):
+    def reduce(self, HomegaSet):
         pass # return omegaMatrix
 
     def serialize(self):
