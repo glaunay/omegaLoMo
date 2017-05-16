@@ -6,6 +6,7 @@ import json
 import numpy as np
 from os import listdir
 from os.path import isfile, join
+import os
 '''
 .....
 This implements the common element of the pipeline
@@ -17,6 +18,17 @@ This implements the common element of the pipeline
 '''
  This describes the relationshionship between a query/template
 '''
+class Node(object):
+    def __init__(self):
+        self.template
+
+    def __hash__(self):
+        return hash(self.query)
+
+    def __eq__(self, other):
+        return self.query == other.query
+
+
 class homologPair(object):
     def __init__(self, idTemplate, idQuery, param):
         self.template = idTemplate # A uniprot identifier or a unirpot object
@@ -25,12 +37,6 @@ class homologPair(object):
 
     def __str__(self):
         return self.query
-
-    def __hash__(self):
-        return hash(self.query)
-
-    def __eq__(self, other):
-        return self.query == other.query
 
     def serialize(self):
         pass
@@ -177,10 +183,13 @@ class HomegaSet(object):
             self.deSerialize(kwargs['bean'])
     
     def _findXml(self, path):
-        for rep in listdir(path):
-            if not rep.startswith('.'):
-                blastPath = path + rep + "/logs/blast.out"
-                yield blastPath
+        if os.path.isdir(path):
+            for rep in listdir(path):
+                if not rep.startswith('.'):
+                    blastPath = path + rep + "/logs/blast.out"
+                    yield blastPath
+        else:
+            yield path
 
     def add(self, **kwargs):
         # item is a list or not , if not put it in a list
@@ -230,7 +239,6 @@ class HomegaSet(object):
         with open (path, 'r') as file:
             data = json.load(file)
             fetch_data = [ hOmegaVector(v['template ID'], [homologPair( hp['template'], hp['query'], hp['param'])  for hp in v['Pairs Data']]) for v in data['vectors'] ]
-            print fetch_data
             for vector in fetch_data:
                 if vector.idTemplate in self.dict:
                     print 'Existe deja'
@@ -297,7 +305,7 @@ class OmegaMatrix(object):
 
             #print self.dict
     
-    def multiMatrix(self, omegaVectorID_A, omegaVectorID_B):
+    def _multiMatrix(self, omegaVectorID_A, omegaVectorID_B):
         
         omegaVectorA = self.dict[omegaVectorID_A].data
         omegaVectorB = self.dict[omegaVectorID_B].data
@@ -311,6 +319,9 @@ class OmegaMatrix(object):
 
         #print str(homologPairListA) +'\n' +str(homologPairListB)+ '\n'+str(matrix)
         return matrix
+    
+    def project(self):
+        pass
 
     def serialize(self):
         pass
@@ -330,3 +341,10 @@ class queryMatrix(object):
         pass
     def deSerialize(self): ## Loic already has a serialized omega matrix as dict..
         pass
+
+if __name__ == '__main__':
+    data = {'repFile' : sys.argv[1],
+       'idQueryList' : sys.argv[2]}
+
+    omegaSet = HomegaSet(path=data['repFile'], queryIdList=data['idQueryList'])
+    omegaSet.serialize(sys.argv[3])
