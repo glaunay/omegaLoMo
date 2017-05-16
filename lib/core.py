@@ -3,6 +3,7 @@
 import xml.etree.ElementTree as ET
 import sys
 import json
+import numpy as np
 from os import listdir
 from os.path import isfile, join
 '''
@@ -23,7 +24,13 @@ class homologPair(object):
         self.param = param  ## store homology relationship quality descriptor %sim/%cov...
 
     def __str__(self):
-        return str(self.__dict__)
+        return self.query
+
+    def __hash__(self):
+        return hash(self.query)
+
+    def __eq__(self, other):
+        return self.query == other.query
 
     def serialize(self):
         pass
@@ -42,6 +49,10 @@ class hOmegaVector(object):
 
     def __hash__(self):
         return hash(self.idTemplate)
+
+    def __str__(self):
+        return self.idTemplate
+
     def _xmlRead(self, xmlFile, idQueryList):
 
         allQIdList = {}
@@ -225,6 +236,7 @@ class HomegaSet(object):
                     print 'Existe deja'
                 else:
                     self.data.append(vector)
+                    self.dict[vector.idTemplate] = vector
 
 class fullMatrix(object):
     def __init__(self, data):
@@ -247,10 +259,59 @@ class fullMatrix(object):
 ## implementaion would be a list of triplet of a pair of omegaVectors supplemned w/
 # a free object containing structure or experimental information about the association between the two templates
 ##
-class omegaMatrix(object):
-    def __init__(self):
-        pass
-    #self.data=[ (Hvec, Hvec, relationShipObject), ... () ]
+class OmegaMatrix(object):
+    def __init__(self, **kwargs):
+        
+        if not 'topo' in kwargs or not 'omegaSet' in kwargs:
+            raise ValueError ('Provide a topographic file and a omegaSet')
+        
+        if 'topo' in kwargs and 'omegaSet' in kwargs:
+            self.topo = kwargs['topo']
+            self.omegaSet = kwargs['omegaSet']
+            self.reduceTopo = {}
+            self.dict = {}
+            self.test = {}
+
+    ## EXPLICATION
+    def reduceAndVectorInject(self):
+        
+        if isinstance(self.topo, dict):
+            for key, value in self.topo.iteritems():
+                if key in self.omegaSet.dict:
+                    self.reduceTopo[self.omegaSet.dict[key]] = []
+                    self.test[key] = []
+
+                    self.dict[key] = self.omegaSet.dict[key]
+                else:
+                    # Si la cle dans topo n'existe pas en tant que vecteur
+                    continue
+
+                for v in value:
+                    if v in self.omegaSet.dict:
+                        self.reduceTopo[self.omegaSet.dict[key]].append(self.omegaSet.dict[v])
+                        self.test[key].append(v)
+
+                        self.dict[v] = self.omegaSet.dict[v]
+                    else:
+                        continue
+
+            #print self.dict
+    
+    def multiMatrix(self, omegaVectorID_A, omegaVectorID_B):
+        
+        omegaVectorA = self.dict[omegaVectorID_A].data
+        omegaVectorB = self.dict[omegaVectorID_B].data
+        homologPairListA = [query for query in omegaVectorA]
+        homologPairListB = [query for query in omegaVectorB]
+
+        matrix = np.zeros((len(homologPairListA), len(homologPairListB)), dtype=object)
+
+        for (x,y), value in np.ndenumerate(matrix):
+            matrix[x, y] = [homologPairListA[x], homologPairListB[y]]
+
+        #print str(homologPairListA) +'\n' +str(homologPairListB)+ '\n'+str(matrix)
+        return matrix
+
     def serialize(self):
         pass
     def deSerialize(self): ## Loic already has a serialized omega matrix as dict..
