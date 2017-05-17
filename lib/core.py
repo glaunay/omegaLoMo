@@ -4,9 +4,10 @@ import xml.etree.ElementTree as ET
 import sys
 import json
 import numpy as np
-from os import listdir
-from os.path import isfile, join
+#from os import listdir
+#from os.path import isfile, join
 import os
+import fnmatch
 '''
 .....
 This implements the common element of the pipeline
@@ -180,8 +181,19 @@ class HomegaSet(object):
                 self.add(xmlFile=xmlFileName)
         
         elif 'bean' in kwargs:
-            self.deSerialize(kwargs['bean'])
+            for jsonFile in self._findJson(kwargs['bean']):
+                print jsonFile
+                self.deSerialize(jsonFile)
     
+    def _findJson(self, path):
+        if os.path.isdir(path):
+                for root, dirnames, filenames in os.walk(path):
+                    for filename in fnmatch.filter(filenames, '*.json'):
+                        yield os.path.join(root, filename)
+        else:
+            if path.endswith('.json'):
+                yield path
+
     def _findXml(self, path):
         if os.path.isdir(path):
             for rep in listdir(path):
@@ -231,9 +243,18 @@ class HomegaSet(object):
         return json.dumps({ "vectors" : [ v.serialize() for v in self.data ], 
                  "queryID" : self.idQueryList })
 
+    def __add__(self, other):
+        for vector in other.data:
+            if not vector.idTemplate in self.dict:
+                self.data.append(vector)
+                return self.data
+            else:
+                raise ValueError ("The vector "+vector.idTemplate+" already in the omegaSet")
+
     def serialize(self, path):
         json.dump({ "vectors" : [ v.serialize() for v in self.data ], 
                  "queryID" : self.idQueryList }, file(path, 'w'))
+
 
     def deSerialize(self, path):
         with open (path, 'r') as file:
@@ -245,6 +266,8 @@ class HomegaSet(object):
                 else:
                     self.data.append(vector)
                     self.dict[vector.idTemplate] = vector
+
+
 
 class fullMatrix(object):
     def __init__(self, data):
@@ -343,8 +366,10 @@ class queryMatrix(object):
         pass
 
 if __name__ == '__main__':
-    data = {'repFile' : sys.argv[1],
-       'idQueryList' : sys.argv[2]}
+    pass
 
-    omegaSet = HomegaSet(path=data['repFile'], queryIdList=data['idQueryList'])
-    omegaSet.serialize(sys.argv[3])
+    #data = {'repFile' : sys.argv[1],
+     #  'idQueryList' : sys.argv[2]}
+
+    #omegaSet = HomegaSet(path=data['repFile'], queryIdList=data['idQueryList'])
+    #omegaSet.serialize(sys.argv[3])
