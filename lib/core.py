@@ -36,6 +36,18 @@ class Node(object):
     def __eq__(self, other):
         return self.query == other.query
 
+    def __gt__(self, other):
+        if cmp(self.query, other.query) > 0 :
+            return True
+        return False
+
+    def __lt__(self, other):
+        if cmp(self.query, other.query) < 0:
+            return True
+        return False
+        
+
+
 ''' This class store a node object which define the homology between a template and a query'''
 class homologPair(object):
     def __init__(self, idTemplate, idQuery, param):
@@ -318,7 +330,8 @@ class OmegaMatrix(object):
             self.omegaSet = kwargs['omegaSet']
             self.reduceTopo = {}
             self.dict = {}
-            self.test = {}
+            self.templatePairs = []
+            self.queryTopo = {} ### ATTRIBUT ?
 
     ## EXPLICATION
     def reduceAndVectorInject(self):
@@ -327,8 +340,6 @@ class OmegaMatrix(object):
             for key, value in self.topo.iteritems():
                 if key in self.omegaSet.dict:
                     self.reduceTopo[self.omegaSet.dict[key]] = []
-                    self.test[key] = []
-
                     self.dict[key] = self.omegaSet.dict[key]
                 else:
                     # Si la cle dans topo n'existe pas en tant que vecteur
@@ -337,8 +348,6 @@ class OmegaMatrix(object):
                 for v in value:
                     if v in self.omegaSet.dict:
                         self.reduceTopo[self.omegaSet.dict[key]].append(self.omegaSet.dict[v])
-                        self.test[key].append(v)
-
                         self.dict[v] = self.omegaSet.dict[v]
                     else:
                         continue
@@ -355,30 +364,113 @@ class OmegaMatrix(object):
         matrix = np.zeros((len(homologPairListA), len(homologPairListB)), dtype=object)
 
         for (x,y), value in np.ndenumerate(matrix):
-            matrix[x, y] = [homologPairListA[x], homologPairListB[y]]
+            matrix[x, y] = (Node(homologPairListA[x]), Node(homologPairListB[y]))
 
         #print str(homologPairListA) +'\n' +str(homologPairListB)+ '\n'+str(matrix)
         return matrix
-    
-    def project(self):
-        pass
+
+    def project(self): ## C'est project qui doit prenre un fichier de liste de pair ou _getTemplatePairs ?
+        queryMatrixObj = QueryMatrix()
+        for (omegaVector_A, omegaVector_B) in self._getTemplatePairs():
+            queryTopology = self.mapMiniMatrix(omegaVector_A, omegaVector_B) 
+            queryMatrixObj.add(queryTopology)
+
+        return queryMatrixObj
+
+# Generate all pairs of template objects in interaction
+
+    def _getTemplatePairs(self):
+        for pKey in self.reduceTopo:
+            for sKey in self.reduceTopo[pKey]:
+                yield (pKey, sKey)
+            
+    def mapMiniMatrix(self, omegaVector_A, omegaVector_B):
+        miniMatrix = self._multiMatrix(omegaVector_A.idTemplate, omegaVector_B.idTemplate)
+        queryTopo = {}
+        print omegaVector_A.idTemplate, omegaVector_B.idTemplate
+        for x in range(miniMatrix.shape[0]):
+            for y in range(miniMatrix.shape[1]):
+                (NodeObjA, NodeObjB) = miniMatrix[x, y]
+                
+                # These 2 queries in interactions
+                #queryID_A = pos[0]
+                #queryID_B = pos[1]
+
+                storeArray = None
+
+                lo_query = NodeObjA if NodeObjA < NodeObjB else NodeObjB # Opt-in 1ry key
+                hi_query = NodeObjA if NodeObjA > NodeObjB else NodeObjB
+                if NodeObjA  == NodeObjB:
+                    lo_query = NodeObjA
+                    hi_query = NodeObjB
+
+                if lo_query in queryTopo:
+                    #print queryTopo[lo_query]
+                    
+                    if hi_query not in queryTopo[lo_query]:
+                        queryTopo[lo_query][hi_query] = []
+                else:
+                    queryTopo[lo_query] = { hi_query : [] }
+
+                storeArray = queryTopo[lo_query][hi_query]
+
+                
+                # FORMAT PARAMETERS ? 
+                storeArray.append({'loQueryParam' : lo_query.param[0], 'hiQueryParam' : hi_query.param[0]})
+            #print queryTopo
+        return queryTopo
 
     def serialize(self):
         pass
     def deSerialize(self): ## Loic already has a serialized omega matrix as dict..
         pass
 
-'''
-    Each element of the queryMatrix
-    (homologPair_I, homologPair_J, relationShipObject*)  # *:psciquic information relative to template pair OR Interface energy of original and threaded
 
-'''
-class queryMatrix(object):
+class QueryMatrix(object):
     def __init__(self):
-        pass
+        self.queryTopo = []
+
+    def add(self, queryTopo):
+        self.queryTopo.append(queryTopo)
+
+    def getEdges(self, **kwargs):
+        if 'blacklist' in kwargs:
+            with open (kwargs['blacklist'], 'r') as file:
+               
+                # Delete known interaction from Intact
+                for line in file:
+                    pair = line.replace('\n', '').split('\t')
+
+                    if pair[0] in self.queryTopo:
+                        for i, value in enumerate(self.queryTopo[value]):
+                            if value == pair[1]:
+                                value.pop(i)
+                            else: 
+                                raise ValueError ('Pair not found')
+
+                        if self.queryTopo[pair[0]] <= 0:
+                            self.queryTopo.pop(pair[0], None)
+
+                    elif pair[1] in self.queryTopo:
+                        for i, value in enumerate(self.queryTopo[value]):
+                            if value == pair[0]:
+                                value.pop(i)
+                            else: 
+                                raise ValueError ('Pair not found')
+
+                        if self.queryTopo[pair[1]] <= 0:
+                            self.queryTopo.pop(pair[1], None)
+
+                for interaction in self.queryTopo:
+                    for lowQuery in interaction:
+                        for highQuery in interaction[lowQuery]:
+                            yield {'lowQuery' : lowQuery, 'highQuery' : highQuery, 
+                            'loQueryEval' : [param['loQueryParam'] for param in interaction[lowQuery][highQuery]],
+                            'hiQueryEval' : [param['hiQueryParam'] for param in interaction[lowQuery][highQuery]]}
 
     def serialize(self):
         pass
+
     def deSerialize(self): ## Loic already has a serialized omega matrix as dict..
         pass
 
