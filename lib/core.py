@@ -254,6 +254,7 @@ class HomegaSet(object):
         for vector in other.data:
             if not vector.idTemplate in self.dict:
                 self.data.append(vector)
+                self.dict[vector.idTemplate] = hOmegaVectorObj
                 return self
             else:
                 raise ValueError ("The vector is "+vector.idTemplate+" already in the omegaSet")
@@ -262,6 +263,7 @@ class HomegaSet(object):
         for vector in other.data:
             if not vector.idTemplate in self.dict:
                 self.data.append(vector)
+                self.dict[vector.idTemplate] = hOmegaVectorObj
                 return self
             else:
                 raise ValueError ("The vector is "+vector.idTemplate+" already in the omegaSet")
@@ -292,6 +294,7 @@ class HomegaSet(object):
                     for hp in v['Pairs Data']:
                          vector.data.append(homologPair( hp['template'], hp['query'], hp['param']))
                     self.data.append(vector)
+                    self.dict[vector.idTemplate] = vector
                
                 else:
                         print ('Already exist')
@@ -387,7 +390,6 @@ class OmegaMatrix(object):
     def mapMiniMatrix(self, omegaVector_A, omegaVector_B):
         miniMatrix = self._multiMatrix(omegaVector_A.idTemplate, omegaVector_B.idTemplate)
         queryTopo = {}
-        print omegaVector_A.idTemplate, omegaVector_B.idTemplate
         for x in range(miniMatrix.shape[0]):
             for y in range(miniMatrix.shape[1]):
                 (NodeObjA, NodeObjB) = miniMatrix[x, y]
@@ -429,44 +431,36 @@ class OmegaMatrix(object):
 class QueryMatrix(object):
     def __init__(self):
         self.queryTopo = []
+        self.ghost_edges = []
+        self.dictQuery = {}
 
     def add(self, queryTopo):
         self.queryTopo.append(queryTopo)
 
+        # Add memories adresses for a given Node
+        for nKey, nVal in queryTopo.iteritems():
+
+            if not nKey.query in self.dictQuery:
+                self.dictQuery[nKey.query] = [nKey]
+            else:
+                self.dictQuery[nKey.query].append(nKey)
+            
+            for hQuery in nVal:
+                if not hQuery.query in self.dictQuery:
+                    self.dictQuery[hQuery.query] = [hQuery]
+                else:
+                    self.dictQuery[hQuery.query].append(hQuery)
+
+
     def getEdges(self, **kwargs):
+
         if 'blacklist' in kwargs:
-            with open (kwargs['blacklist'], 'r') as file:
-               
-                # Delete known interaction from Intact
-                for line in file:
-                    pair = line.replace('\n', '').split('\t')
-
-                    if pair[0] in self.queryTopo:
-                        for i, value in enumerate(self.queryTopo[value]):
-                            if value == pair[1]:
-                                value.pop(i)
-                            else: 
-                                raise ValueError ('Pair not found')
-
-                        if self.queryTopo[pair[0]] <= 0:
-                            self.queryTopo.pop(pair[0], None)
-
-                    elif pair[1] in self.queryTopo:
-                        for i, value in enumerate(self.queryTopo[value]):
-                            if value == pair[0]:
-                                value.pop(i)
-                            else: 
-                                raise ValueError ('Pair not found')
-
-                        if self.queryTopo[pair[1]] <= 0:
-                            self.queryTopo.pop(pair[1], None)
-
-                for interaction in self.queryTopo:
-                    for lowQuery in interaction:
-                        for highQuery in interaction[lowQuery]:
-                            yield {'lowQuery' : lowQuery, 'highQuery' : highQuery, 
-                            'loQueryEval' : [param['loQueryParam'] for param in interaction[lowQuery][highQuery]],
-                            'hiQueryEval' : [param['hiQueryParam'] for param in interaction[lowQuery][highQuery]]}
+            for interaction in self.queryTopo:
+                for lowQuery in interaction:
+                    for highQuery in interaction[lowQuery]:
+                        yield {'lowQuery' : lowQuery, 'highQuery' : highQuery, 
+                        'loQueryEval' : [param['loQueryParam'] for param in interaction[lowQuery][highQuery]],
+                        'hiQueryEval' : [param['hiQueryParam'] for param in interaction[lowQuery][highQuery]]} 
 
     def serialize(self):
         pass
