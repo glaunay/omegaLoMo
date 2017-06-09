@@ -1,4 +1,4 @@
- # OmegaLoMo
+# OmegaLoMo
 
 The aim of this project is to find new interactions between proteins in a proteome, based on sequence homology.
 
@@ -8,22 +8,18 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-This pipeline is currently using [Jupyter](http://jupyter.org/) to work.
+<div class="alert alert-warning">
+    This pipeline is currently using [Jupyter](http://jupyter.org/) to work.
+</div>
 
-These packages are necessary to make OmegaLoMo work fine
+You will also need these packages to work with OmegaLoMo.
 
 ```python
 import sys
-import os
-import subprocess
-import fnmatch
 import networkx as nx
+import numpy as np
 import matplotlib.pyplot as plt
 import copy
-import collections
-import numpy as np
-import operator
-import networkx as nx
 ```
 
 
@@ -58,7 +54,7 @@ After downloading the pipeline and the example files, here are some tests that c
 
 Examples files contains an index file, a few blast files and a serialized topology.
 
-A Jupyter notebook is also join to help you at each step.
+A Jupyter notebook is also join in the git to help you at each step.
 
 
 
@@ -95,20 +91,14 @@ These are the predicted interactions proteins-proteins in the genome of your org
 
 ## Deployment
 
-If you want to use this pipeline with your own data set, make sure to .........
+If you want to use this pipeline with your own data set, make sure to check all input format
+
 
 ## Built With
 
 * [Jupyter](http://jupyter.org/) - An open-source web application
 
 
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
 
 ## Authors
 
@@ -117,13 +107,4 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 * **Guillaume Launay** - *Initial work* - [glaunay](https://github.com/glaunay)
 
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
 
