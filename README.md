@@ -8,9 +8,9 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-<div class="alert alert-warning">
-    This pipeline is currently using [Jupyter](http://jupyter.org/) to work.
-</div>
+
+This pipeline is currently using [Jupyter](http://jupyter.org/) to work.
+
 
 You will also need these packages to work with OmegaLoMo.
 
