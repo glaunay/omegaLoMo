@@ -1,3 +1,5 @@
+import collections
+import operator
 
 
 class Topology(object):
