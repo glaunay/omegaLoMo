@@ -11,8 +11,8 @@ These instructions will get you a copy of the project up and running on your loc
 
 This pipeline is currently using [Jupyter](http://jupyter.org/) to work.
 
+It also use [Python 2.7](https://www.python.org/download/releases/2.7/) and more particularly these packages :
 
-You will also need these packages to work with OmegaLoMo.
 
 ```python
 import sys
@@ -25,11 +25,9 @@ import copy
 
 ### Installing
 
-A step by step series of examples that tell you have to get a development env running
-
 First of all, you have to download the full package.
 
-The first step is to clone the git repository. In order to do that, open a terminal window and write this
+The first step is to clone the git repository. In order to do that, open a terminal console and write this
 
 command line :
 
@@ -50,9 +48,25 @@ import PACKAGE_PATH.core as core
 
 ## Running the tests
 
-After downloading the pipeline and the example files, here are some tests that can help you to familiarise with all data.
+After downloading the package and the example files, here are some tests that can help you to familiarise with all data and inputs.
 
-Examples files contains an index file, a few blast files and a serialized topology.
+Example files contains :
+
+An index file
+
+>List of the full proteome of our organism
+
+A small database 
+
+>Known interactions in numerous organisms (from litterature, ...)
+
+A few blast files
+
+A serialized topology.
+
+A list of target proteins
+
+>Proteins of interest 
 
 A Jupyter notebook is also join in the git to help you at each step.
 
@@ -60,31 +74,11 @@ A Jupyter notebook is also join in the git to help you at each step.
 
 ### Break down into end to end tests
 
-
-Create a new cell and initialize a new HomegaSet. Provide a serialize JSON File or file containing BLAST files.
-Provide also the R6 Index file that contain all R6 IDs.
-
-Using serialize JSON File:
-```
-omegaSet = core.HomegaSet(bean= 'JSON_FILE_PATH.json' , queryIdList= INDEX_R6_FILE_PATH)
-```
-
-Using a directory containing BLAST Files:
-```
-omegaSet = core.HomegaSet(path= 'DIR_PATH' , queryIdList= INDEX_R6_FILE_PATH)
-```
-
-Then, create a OmegaMatrix
-```
-omegaMatrix = ca.OmegaMatrix(topo = newDic, omegaSet = omegaSet)
-omegaMatrix.reduceAndVectorInject()
+To help you run the pipeline, please refere to the jupyter notebook provide.
 
 
 
-queryTopo = omegaMatrix.project()
-```
-
-At this point, you should be able to observe some graphs corresponding to the first neighbors of each proteins of interest.
+At the end, you should be able to observe some graphs corresponding to the first neighbors of each proteins of interest.
 
 These are the predicted interactions proteins-proteins in the genome of your organism.
 
