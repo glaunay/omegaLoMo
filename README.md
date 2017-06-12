@@ -20,6 +20,7 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
+import json
 ```
 
 
@@ -52,21 +53,21 @@ After downloading the package and the example files, here are some tests that ca
 
 Example files contains :
 
-An index file
+>An index file
 
->List of the full proteome of our organism
+>>List of the full proteome of our organism
 
-A small database 
+>A small database 
 
->Known interactions in numerous organisms (from litterature, ...)
+>>Known interactions in numerous organisms (from litterature, ...)
 
-A few blast files
+>A few blast files
 
-A serialized topology.
+>A serialized topology.
 
-A list of target proteins
+>A list of target proteins
 
->Proteins of interest 
+>>Proteins of interest 
 
 A Jupyter notebook is also join in the git to help you at each step.
 
