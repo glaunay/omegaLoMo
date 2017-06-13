@@ -1,5 +1,6 @@
 import collections
 import operator
+import json
 
 
 class Topology(object):
@@ -16,6 +17,28 @@ class Topology(object):
         z = x.copy()
         z.update(y)
         return z
+
+    def serialize(self, dictTopo, path):
+    
+        jsonStruct = {}
+        for template, templateInInteraction in dictTopo.iteritems():
+            jsonStruct[template] = templateInInteraction
+            
+        json.dump(jsonStruct, file(path, 'w'))
+
+
+    def deSerialize(self, path):
+    
+        with open (path, 'r') as file:
+            data = json.load(file)
+            
+            # Renitialize the dictionnary if it's not already emtpty
+            if not len(self.newDic) == 0:
+                self.newDic.clear()
+            
+            for template, templateInInteraction in data.iteritems():
+                self.newDic[template] = templateInInteraction
+
 
     #Extract information from the database (Intact here)
     #Creat two dictionnary, one representing the full interaction database (dico)
