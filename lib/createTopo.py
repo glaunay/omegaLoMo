@@ -38,7 +38,7 @@ class Topology(object):
             
             for template, templateInInteraction in data.iteritems():
                 self.newDic[template] = templateInInteraction
-
+        return self.newDic
 
     #Extract information from the database (Intact here)
     #Creat two dictionnary, one representing the full interaction database (dico)
