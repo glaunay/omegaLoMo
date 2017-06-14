@@ -83,19 +83,29 @@ class hOmegaVector(object):
 
     # This method take as input a XML Blast Output (xmlFile) that can filter using a query list (idQueryList)
     def _xmlRead(self, xmlFile, idQueryList):
-        print xmlFile
+        
+        getXML = []
+        currentXML = None
+
+        for item in self.xmlSplitter(open(xmlFile)):
+            doc = ET.fromstring(item)
+            length = doc.find('./BlastOutput_query-len').text
+            getXML.append((length, doc))
+        currentXML = [xml for xml in getXML if xml[0] == max(length[0] for length in getXML if length != 0)]
+
         allQIdList = {}
         idList = []
+
         with open(idQueryList, 'r') as f:
             for line in f:
-                idList.append(line.split("|")[1])
+                idList.append(line.split("|")[1])     
         fileName = xmlFile
-
 
         ## Extract from xml tree, the subtrees containing Hit_accession node text value present in idList
         ## Get last iteration
-        tree=ET.parse(fileName)
-        root = tree.getroot()
+        #tree=ET.parse(fileName)
+        #tree.getroot()
+        root = currentXML[0][1] 
         parent_map = {c:p for p in root.iter() for c in p}
 
         blast_all_iter_node = root.find('./BlastOutput_iterations')
@@ -111,57 +121,65 @@ class hOmegaVector(object):
                 
         lastIter = parent_map[lastIter_subnode]
         Iteration_hits_node = lastIter.find("./Iteration_hits")
-        if not Iteration_hits_node is None:
-            for hit in Iteration_hits_node.findall("./Hit"):
-                id = hit.find("Hit_accession")
-                if id.text not in idList:
-                    #print "removing " + str(id) + ' from ' + str(Iteration_hits_node)
-                    Iteration_hits_node.remove(hit)
-                else :
-                    allQIdList[id.text] = []
-                    coverList = []     
-                    ## Get hit score information and display stdout
-                    # loop over Hsp get Hsp_hit-from, Hsp_hit-to
-                    # permier arrive premier dedans
-                    # condition pour rentrer, etre non-chevauchant avec ceux deja presents.
-                    allowed = True
-                 
+        for hit in Iteration_hits_node.findall("./Hit"):
+            id = hit.find("Hit_accession")
+            if id.text not in idList:
+                #print "removing " + str(id) + ' from ' + str(Iteration_hits_node)
+                Iteration_hits_node.remove(hit)
+            else :
+                allQIdList[id.text] = []
+                coverList = []     
+                ## Get hit score information and display stdout
+                # loop over Hsp get Hsp_hit-from, Hsp_hit-to
+                # permier arrive premier dedans
+                # condition pour rentrer, etre non-chevauchant avec ceux deja presents.
+                allowed = True
+             
 
-                    #Iteration_hits_node.findall("./Hit/Hit_hsps/Hsp"):
-                    for hsp in hit.findall("./Hit_hsps/Hsp"):
-                        Hfrom = hsp[6].text  
-                        Hto = hsp[7].text
-                        seq = ""
+                #Iteration_hits_node.findall("./Hit/Hit_hsps/Hsp"):
+                for hsp in hit.findall("./Hit_hsps/Hsp"):
+                    Hfrom = hsp[6].text  
+                    Hto = hsp[7].text
+                    seq = ""
 
-                        for seq in coverList:
-                            #print seq, Hfrom, Hto
-                      
-                            if (int(seq[0]) <= int(Hfrom) <= int(seq[1])) or (int(seq[0]) <= int(Hto) <= int(seq[1])):
-                                allowed = False
-                            if (int(Hfrom) <= int(seq[0]) and  int(Hto) >= int(seq[1])):
-                                allowed = False
+                    for seq in coverList:
+                        #print seq, Hfrom, Hto
+                  
+                        if (int(seq[0]) <= int(Hfrom) <= int(seq[1])) or (int(seq[0]) <= int(Hto) <= int(seq[1])):
+                            allowed = False
+                        if (int(Hfrom) <= int(seq[0]) and  int(Hto) >= int(seq[1])):
+                            allowed = False
 
-                        if allowed:
-                            allQIdList[id.text].append(([Hfrom, 
-                                          Hto, 
-                                          hit.find("Hit_hsps/Hsp/Hsp_positive").text, 
-                                          hit.find("Hit_hsps/Hsp/Hsp_identity").text, 
-                                          hit.find("Hit_hsps/Hsp/Hsp_evalue").text, 
-                                          lenQuery]))
-                            
-                            coverList.append((Hfrom, Hto))
-            
-            # Si on trouve des ID Query homologue a notre Template
-            if len(allQIdList) > 0:
-                for idQuery in allQIdList:
-                    if not self.data:
-                        self.data = []
-                    self.data.append(homologPair(self.idTemplate, idQuery, allQIdList[idQuery]))
-                return self.data
-            else:
-                return None
+                    if allowed:
+                        allQIdList[id.text].append(([Hfrom, 
+                                      Hto, 
+                                      hit.find("Hit_hsps/Hsp/Hsp_positive").text, 
+                                      hit.find("Hit_hsps/Hsp/Hsp_identity").text, 
+                                      hit.find("Hit_hsps/Hsp/Hsp_evalue").text, 
+                                      lenQuery]))
+                        
+                        coverList.append((Hfrom, Hto))
+        
+        # Si on trouve des ID Query homologue a notre Template
+        if len(allQIdList) > 0:
+            for idQuery in allQIdList:
+                if not self.data:
+                    self.data = []
+                self.data.append(homologPair(self.idTemplate, idQuery, allQIdList[idQuery]))
+            return self.data
         else:
-            print ('These are no hit')
+            return None 
+
+    def xmlSplitter(self, data, separator=lambda x: x.startswith('<?xml')):
+        buff = []
+        for line in data:
+            if separator(line):
+                if buff:
+                    yield ''.join(buff)
+                    buff[:] = []
+            buff.append(line)
+        yield ''.join(buff)
+
 
     @property
     def id(self):
