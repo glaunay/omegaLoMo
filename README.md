@@ -1,6 +1,8 @@
-# OmegaLoMo
+<img src="./pictures/logomegalomo.png" alt="Drawing" style="width: 300px;"/>
 
-The aim of this project is to find new interactions between proteins in a proteome, based on sequence homology.
+Finding new interactions between proteins in a proteome, based on sequence homology.
+
+<img src="./pictures/FullPipeline.png" alt="Drawing" style="width: 1000px;"/>
 
 ## Getting Started
 
