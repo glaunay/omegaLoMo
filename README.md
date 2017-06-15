@@ -1,4 +1,4 @@
-<p align="center"><img src="./pictures/logomegalomo.png" alt="Drawing" style="width: 300px;"/></p>
+<p align="center"><img src="./pictures/logomegalomo.png" alt="Drawing" style="width: 400px;"/></p>
 
 Finding new interactions between proteins in a proteome, based on sequence homology.
 
