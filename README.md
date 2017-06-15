@@ -1,4 +1,4 @@
-<img src="./pictures/logomegalomo.png" alt="Drawing" style="width: 300px;"/>
+<p align="center"><img src="./pictures/logomegalomo.png" alt="Drawing" style="width: 400px;"/></p>
 
 Finding new interactions between proteins in a proteome, based on sequence homology.
 
@@ -42,6 +42,8 @@ Import the package to your .py project
 
 ```
 import PACKAGE_PATH.core as core
+import PACKAGE_PATH.createTopo as cT
+import PACKAGE_PATH.graph as graph
 ```
 
 
