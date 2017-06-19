@@ -13,7 +13,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 This pipeline is currently using [Jupyter](http://jupyter.org/) to work.
 
-It also use [Python 2.7](https://www.python.org/download/releases/2.7/) and more particularly these packages :
+It also uses [Python 2.7](https://www.python.org/download/releases/2.7/) and more particularly these packages :
 
 
 ```python
@@ -30,9 +30,7 @@ import json
 
 First of all, you have to download the full package.
 
-The first step is to clone the git repository. In order to do that, open a terminal console and write this
-
-command line :
+The first step is to clone the git repository. In order to do that, open a terminal console and write this command line :
 
 ```
 git clone https://github.com/glaunay/omegaLoMo.git 
@@ -56,7 +54,7 @@ import smallWork as sW
 
 After downloading the package and the serialized data, check the Run_Analsis jupyter notebook in order to use the pipeline.
 
-Serialized files contains :
+Serialized files contain :
 
 >indexR6
 
@@ -64,11 +62,11 @@ Serialized files contains :
 
 >newDic.json
 
->>Dictionnary containing all interaction extract from Intact (physical interactions with Uniprot Id)
+>>Dictionnary containing all interaction extracted from Intact (physical interactions with Uniprot ID)
 
 >FullOmegaSet_coverage.json
 
->>Contains all information recquired to build the graph
+>>Contains all information required to build the graph
 
 >divKnownR6.txt
 
@@ -78,12 +76,12 @@ Serialized files contains :
 
 At the end, you should be able to observe some graphs corresponding to the first neighbors of each proteins of interest.
 
-These are the predicted interactions proteins-proteins in the genome of your organism.
+These are the proteins-proteins predicted interactions in the genome of your organism.
 
 
 ## Deployment
 
-If you want to use this pipeline with your own data set, make sure to check all input format
+If you want to use this pipeline with your own data set, make sure to check all input format.
 
 
 ## Built With
