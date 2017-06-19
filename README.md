@@ -72,7 +72,7 @@ Serialized files contains :
 
 >divKnownR6.txt
 
-<div class="alert alert-info"><a href=http://www.uniprot.org/uniprot/?query=taxonomy:%22Streptococcus%20pneumoniae%20(strain%20ATCC%20BAA-255%20/%20R6)%20[171101]%22+go:51301> File download from uniprot </div>
+<div><a href=http://www.uniprot.org/uniprot/?query=taxonomy:%22Streptococcus%20pneumoniae%20(strain%20ATCC%20BAA-255%20/%20R6)%20[171101]%22+go:51301> File download from uniprot </div>
 
 
 
