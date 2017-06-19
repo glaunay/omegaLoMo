@@ -42,7 +42,7 @@ Import the package to your .py project
 import PACKAGE_PATH.core as core
 import PACKAGE_PATH.createTopo as cT
 import PACKAGE_PATH.graph as graph
-import smallWork as sW
+import PACKAGE_PATH.smallWork as sW
 ```
 
 
