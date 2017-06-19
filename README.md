@@ -6,7 +6,7 @@ Finding new interactions between proteins in a proteome, based on sequence homol
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. 
+Follow instructions below to make a version of OmegaLoMo run on your computer.
 
 ### Prerequisites
 
