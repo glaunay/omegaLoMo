@@ -44,6 +44,7 @@ Import the package to your .py project
 import PACKAGE_PATH.core as core
 import PACKAGE_PATH.createTopo as cT
 import PACKAGE_PATH.graph as graph
+import smallWork as sW
 ```
 
 
@@ -53,33 +54,25 @@ import PACKAGE_PATH.graph as graph
 
 ## Running the tests
 
-After downloading the package and the example files, here are some tests that can help you to familiarise with all data and inputs.
+After downloading the package and the serialized data, check the Run_Analsis jupyter notebook in order to use the pipeline.
 
-Example files contains :
+Serialized files contains :
 
->An index file
+>indexR6
 
 >>List of the full proteome of our organism
 
->A small database 
+>newDic.json
 
->>Known interactions in numerous organisms (from litterature, ...)
+>>Dictionnary containing all interaction extract from Intact (physical interactions with Uniprot Id)
 
->A few blast files
+>FullOmegaSet_coverage.json
 
->A serialized topology.
+>>Contains all information recquired to build the graph
 
->A list of target proteins
+>divKnownR6.txt
 
->>Proteins of interest 
-
-A Jupyter notebook is also join in the git to help you at each step.
-
-
-
-### Break down into end to end tests
-
-To help you run the pipeline, please refere to the jupyter notebook provide.
+>> <div><a href=http://www.uniprot.org/uniprot/?query=taxonomy:%22Streptococcus%20pneumoniae%20(strain%20ATCC%20BAA-255%20/%20R6)%20[171101]%22+go:51301> File download from uniprot </a></div>
 
 
 
