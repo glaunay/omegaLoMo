@@ -34,6 +34,8 @@ class Interactome(object):
 
     def filterGraph(self, neighborsGraph, **kwargs):
     
+        graph = neighborsGraph.graph
+
         coverage = 0
         identity = 0
         
@@ -43,32 +45,28 @@ class Interactome(object):
             if param == 'identity':
                 identity = kwargs['identity']
         
-        G = copy.deepcopy(neighborsGraph)
+        G = copy.deepcopy(graph)
         
         for edge in G.edge:
             for node in G[edge].keys():
                 for i, lowQueryEval in enumerate(G[edge][node]['lowQueryParam']):
-                        
-                    coverPerCent = (int(lowQueryEval[3]) * 100) / (int(lowQueryEval[1]) - int(lowQueryEval[0])) 
-                   
-                    if float(kwargs['evalue']) > float(lowQueryEval[4]) and float(coverage) > float(coverPerCent): 
+                    coverPerCent =  self.coverageCalculation(lowQueryEval[0], lowQueryEval[1], lowQueryEval[5])
+                    if float(lowQueryEval[4]) > float(kwargs['evalue']) or float(coverPerCent) < float(coverage):
                         G.adj[edge][node]['highQueryParam'].pop(i)
                         G.adj[edge][node]['lowQueryParam'].pop(i)
-
                         break
                 
-                if node in G[edge] and len(G[edge][node]['highQueryParam']) > 0:
-                    for i, highQueryEval in enumerate(G[edge][node]['highQueryParam']):
-                        
-                        coverPerCent = (int(highQueryEval[3]) * 100) / (int(highQueryEval[1]) - int(highQueryEval[0]))
+                #if node in G[edge] and len(G[edge][node]['highQueryParam']) > 0:
+                for i, highQueryEval in enumerate(G[edge][node]['highQueryParam']):
+                    coverPerCent =  self.coverageCalculation(highQueryEval[0], highQueryEval[1], highQueryEval[5])
 
-                        if float(kwargs['evalue']) > float(highQueryEval[4]) and float(coverage) > float(coverPerCent):
-                            G.adj[edge][node]['highQueryParam'].pop(i)
-                            G.adj[edge][node]['lowQueryParam'].pop(i)
-                            break
+                    if  float(highQueryEval[4]) > float(kwargs['evalue']) or float(coverPerCent) < float(coverage):
+                        G.adj[edge][node]['highQueryParam'].pop(i)
+                        G.adj[edge][node]['lowQueryParam'].pop(i)
+                        break
 
                 # If there is two highQ or lowQ value for the same node
-                if len(G.adj[edge][node]['highQueryParam']) <= 0 or len(G.adj[edge][node]['lowQueryParam']) <= 0:
+                if len(G.adj[edge][node]['highQueryParam']) == 0 or len(G.adj[edge][node]['lowQueryParam']) == 0:
                     del G.adj[edge][node]
                     
         # Remove Node with no interactions
@@ -76,52 +74,76 @@ class Interactome(object):
             if not G.neighbors(node):
                 G.remove_node(node)
 
-        return G
+        neighborsGraph.graph = G
+        return neighborsGraph
+
+    def coverageCalculation(self, minSeq, maxSeq, totalSeq):
+        coverPerCent =  int(((float(maxSeq) - float(minSeq)) / float(totalSeq)) * 100)
+        return coverPerCent
+
 
     def drawCurveParam(self, neighborsGraph):
-        
+        '''
+        for k, v in neighborsGraph.graph.edge.iteritems():
+            for value in v:
+                print k, value, neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][4],neighborsGraph.graph.edge[k][value]['highQueryParam'][0][4], self.coverageCalculation(neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][0],
+                 neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][1], 
+                 neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][5])
+        '''
+
         graph = neighborsGraph.graph
         queryCenter = neighborsGraph.queryCenter
 
-        all_evalue = set()
-        all_coverage = set()
+        all_evalue = []
+        all_coverage = []
         all_identity = []
         
         for query in graph.edge:
             if query.query == queryCenter:
                 for neighbor, param in graph.edge[query].iteritems():
                     for low in param['lowQueryParam']:
-                       
-                        coverPerCent = (int(low[3]) * 100) / (int(low[1]) - int(low[0])) 
-                        all_evalue.add(math.log10(float(low[4])))
-                        all_coverage.add(coverPerCent)
+                        coverPerCent = self.coverageCalculation(low[0], low[1], low[5])
+                        all_evalue.append(math.log10(float(low[4])))
+                        all_coverage.append(coverPerCent)
+                    
                     
                     for high in param['highQueryParam']:
-                        
-                        coverPerCent = (int(high[3]) * 100) / (int(high[1]) - int(high[0])) 
+                        coverPerCent = self.coverageCalculation(high[0], high[1], high[5])
                         # Transform to log scale for th evalue
-                        all_evalue.add(math.log10(float(high[4])))
-                        all_coverage.add(coverPerCent)
-                        
-        f1 = plt.figure()
-        ax1 = f1.add_subplot(111)
+                        all_evalue.append(math.log10(float(high[4])))
+                        all_coverage.append(coverPerCent)
+                    
         
+        sorted_all_evalue_per_cent = sorted([ev for ev in all_evalue])
+        sorted_all_coverage = sorted(all_coverage)
+
+        all_evalue = sorted([evalue[1] for evalue in self.densityCumulate(sorted_all_evalue_per_cent)])
+        all_coverage = sorted([evalue[1] for evalue in self.densityCumulate(sorted_all_coverage)])
+
+        cumulate_node_evalue = sorted([evalue[0] for evalue in self.densityCumulate(sorted_all_evalue_per_cent)])
+        cumulate_node_coverage = sorted([evalue[0] for evalue in self.densityCumulate(sorted_all_coverage)])
+
         #Legend
         red_patch = mpatches.Patch(color='red', label='eValue')
         green_patch = mpatches.Patch(color='green', label='Coverage')
         
-        ax1.legend(handles=[red_patch, green_patch])
-        
-        xEval = np.arange(0, len(all_evalue), 1)
-        xCov = np.arange(0, len(all_coverage), 1)
-        
-        all_evalue = sorted(all_evalue)
-        all_coverage = sorted(all_coverage)
-        
-        ax1.plot(xEval, all_evalue, color = 'r', linestyle='--', marker='o')
-        # Il se peut que le nombre de coverage sois inferieur au nombre de evalue car ecrasement de valeurs
-        ax1.plot(xCov, all_coverage, linestyle='--', marker='o', color='g')
-        return ax1
+        fig1 = plt.figure(1)
+        ax1 = fig1.add_subplot(111)
+        ax1.legend(handles=[red_patch])
+        ax1.plot(all_evalue, cumulate_node_evalue, color = 'r', linestyle='--', marker='o')
+        plt.show()
+
+        fig2 = plt.figure(2)
+        ax2 = fig2.add_subplot(111)
+        ax2.legend(handles=[green_patch])
+        ax2.plot(all_coverage, cumulate_node_coverage, linestyle='--', marker='o', color='g')
+        plt.show()
+
+    def densityCumulate(self, listParam):
+        dataSet = set()
+        for param in listParam:
+            dataSet.add((len([nodeFiltered for nodeFiltered in listParam if nodeFiltered <= param]), param))
+        return dataSet
 
     def drawNeiTopo(self, neighbors_dict):
         print "Liste des 1ers voisine:\n"
@@ -173,4 +195,4 @@ class NeighboorGraph(object):
                         lowQueryParam = param['lowQueryParam'],
                         highQueryParam = param['highQueryParam'])
         self.graph = G
-        return G
+        return self.graph
