@@ -1,17 +1,19 @@
-# OmegaLoMo
+<p align="center"><img src="./pictures/logomegalomo.png" alt="Drawing" style="width: 400px;"/></p>
 
-The aim of this project is to find new interactions between proteins in a proteome, based on sequence homology.
+Finding new interactions between proteins in a proteome, based on sequence homology.
+
+<img src="./pictures/FullPipeline.png" alt="Drawing" style="width: 1000px;"/>
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. 
+Follow instructions below to make a version of OmegaLoMo run on your computer.
 
 ### Prerequisites
 
 
 This pipeline is currently using [Jupyter](http://jupyter.org/) to work.
 
-It also use [Python 2.7](https://www.python.org/download/releases/2.7/) and more particularly these packages :
+It also uses [Python 2.7](https://www.python.org/download/releases/2.7/) and more particularly these packages :
 
 
 ```python
@@ -28,9 +30,7 @@ import json
 
 First of all, you have to download the full package.
 
-The first step is to clone the git repository. In order to do that, open a terminal console and write this
-
-command line :
+The first step is to clone the git repository. In order to do that, open a terminal console and write this command line :
 
 ```
 git clone https://github.com/glaunay/omegaLoMo.git 
@@ -40,6 +40,9 @@ Import the package to your .py project
 
 ```
 import PACKAGE_PATH.core as core
+import PACKAGE_PATH.createTopo as cT
+import PACKAGE_PATH.graph as graph
+import PACKAGE_PATH.smallWork as sW
 ```
 
 
@@ -49,44 +52,36 @@ import PACKAGE_PATH.core as core
 
 ## Running the tests
 
-After downloading the package and the example files, here are some tests that can help you to familiarise with all data and inputs.
+After downloading the package and the serialized data, check the Run_Analsis jupyter notebook in order to use the pipeline.
 
-Example files contains :
+Serialized files contain :
 
->An index file
+>indexR6
 
 >>List of the full proteome of our organism
 
->A small database 
+>newDic.json
 
->>Known interactions in numerous organisms (from litterature, ...)
+>>Dictionnary containing all interaction extracted from Intact (physical interactions with Uniprot ID)
 
->A few blast files
+>FullOmegaSet_coverage.json
 
->A serialized topology.
+>>Contains all information required to build the graph
 
->A list of target proteins
+>divKnownR6.txt
 
->>Proteins of interest 
-
-A Jupyter notebook is also join in the git to help you at each step.
-
-
-
-### Break down into end to end tests
-
-To help you run the pipeline, please refere to the jupyter notebook provide.
+>> <div><a href=http://www.uniprot.org/uniprot/?query=taxonomy:%22Streptococcus%20pneumoniae%20(strain%20ATCC%20BAA-255%20/%20R6)%20[171101]%22+go:51301> File download from uniprot </a></div>
 
 
 
 At the end, you should be able to observe some graphs corresponding to the first neighbors of each proteins of interest.
 
-These are the predicted interactions proteins-proteins in the genome of your organism.
+These are the proteins-proteins predicted interactions in the genome of your organism.
 
 
 ## Deployment
 
-If you want to use this pipeline with your own data set, make sure to check all input format
+If you want to use this pipeline with your own data set, make sure to check all input format.
 
 
 ## Built With

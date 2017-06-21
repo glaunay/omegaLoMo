@@ -121,54 +121,55 @@ class hOmegaVector(object):
                 
         lastIter = parent_map[lastIter_subnode]
         Iteration_hits_node = lastIter.find("./Iteration_hits")
-        for hit in Iteration_hits_node.findall("./Hit"):
-            id = hit.find("Hit_accession")
-            if id.text not in idList:
-                #print "removing " + str(id) + ' from ' + str(Iteration_hits_node)
-                Iteration_hits_node.remove(hit)
-            else :
-                allQIdList[id.text] = []
-                coverList = []     
-                ## Get hit score information and display stdout
-                # loop over Hsp get Hsp_hit-from, Hsp_hit-to
-                # permier arrive premier dedans
-                # condition pour rentrer, etre non-chevauchant avec ceux deja presents.
-                allowed = True
-             
+        if Iteration_hits_node is not None:
+            for hit in Iteration_hits_node.findall("./Hit"):
+                id = hit.find("Hit_accession")
+                if id.text not in idList:
+                    #print "removing " + str(id) + ' from ' + str(Iteration_hits_node)
+                    Iteration_hits_node.remove(hit)
+                else :
+                    allQIdList[id.text] = []
+                    coverList = []     
+                    ## Get hit score information and display stdout
+                    # loop over Hsp get Hsp_hit-from, Hsp_hit-to
+                    # permier arrive premier dedans
+                    # condition pour rentrer, etre non-chevauchant avec ceux deja presents.
+                    allowed = True
+                 
 
-                #Iteration_hits_node.findall("./Hit/Hit_hsps/Hsp"):
-                for hsp in hit.findall("./Hit_hsps/Hsp"):
-                    Hfrom = hsp[6].text  
-                    Hto = hsp[7].text
-                    seq = ""
+                    #Iteration_hits_node.findall("./Hit/Hit_hsps/Hsp"):
+                    for hsp in hit.findall("./Hit_hsps/Hsp"):
+                        Hfrom = hsp[6].text  
+                        Hto = hsp[7].text
+                        seq = ""
 
-                    for seq in coverList:
-                        #print seq, Hfrom, Hto
-                  
-                        if (int(seq[0]) <= int(Hfrom) <= int(seq[1])) or (int(seq[0]) <= int(Hto) <= int(seq[1])):
-                            allowed = False
-                        if (int(Hfrom) <= int(seq[0]) and  int(Hto) >= int(seq[1])):
-                            allowed = False
+                        for seq in coverList:
+                            #print seq, Hfrom, Hto
+                      
+                            if (int(seq[0]) <= int(Hfrom) <= int(seq[1])) or (int(seq[0]) <= int(Hto) <= int(seq[1])):
+                                allowed = False
+                            if (int(Hfrom) <= int(seq[0]) and  int(Hto) >= int(seq[1])):
+                                allowed = False
 
-                    if allowed:
-                        allQIdList[id.text].append(([Hfrom, 
-                                      Hto, 
-                                      hit.find("Hit_hsps/Hsp/Hsp_positive").text, 
-                                      hit.find("Hit_hsps/Hsp/Hsp_identity").text, 
-                                      hit.find("Hit_hsps/Hsp/Hsp_evalue").text, 
-                                      lenQuery]))
-                        
-                        coverList.append((Hfrom, Hto))
-        
-        # Si on trouve des ID Query homologue a notre Template
-        if len(allQIdList) > 0:
-            for idQuery in allQIdList:
-                if not self.data:
-                    self.data = []
-                self.data.append(homologPair(self.idTemplate, idQuery, allQIdList[idQuery]))
-            return self.data
-        else:
-            return None 
+                        if allowed:
+                            allQIdList[id.text].append(([Hfrom, 
+                                          Hto, 
+                                          hit.find("Hit_hsps/Hsp/Hsp_positive").text, 
+                                          hit.find("Hit_hsps/Hsp/Hsp_identity").text, 
+                                          hit.find("Hit_hsps/Hsp/Hsp_evalue").text, 
+                                          lenQuery]))
+                            
+                            coverList.append((Hfrom, Hto))
+            
+            # Si on trouve des ID Query homologue a notre Template
+            if len(allQIdList) > 0:
+                for idQuery in allQIdList:
+                    if not self.data:
+                        self.data = []
+                    self.data.append(homologPair(self.idTemplate, idQuery, allQIdList[idQuery]))
+                return self.data
+            else:
+                return None 
 
     def xmlSplitter(self, data, separator=lambda x: x.startswith('<?xml')):
         buff = []
