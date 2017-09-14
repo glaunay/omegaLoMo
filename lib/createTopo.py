@@ -1,13 +1,30 @@
 import collections
 import operator
 import json
-
-
+import re
+#
+# filePath
+#
 class Topology(object):
-    def __init__(self, filePath, filterPath):
-        self.filePath = filePath
-        self.filterPath = filterPath
+
+    def _sumPairs(self, dic):
+        i = 0
+        for k in dic:
+            i += len(dic[k])
+        return i
+
+    @property
+    def rawDicLen(self):
+        return self._sumPairs(self.rawDic)
+
+    @property
+    def newDicLen(self):
+        return self._sumPairs(self.newDic)
+
+    def __init__(self):
+
         self.newDic = {}
+        self.rawDic = {}
         self.sortedByOccurences = []
     allIdleft = set()
     orderedId = []
@@ -19,32 +36,33 @@ class Topology(object):
         return z
 
     def serialize(self, dictTopo, path):
-    
+
         jsonStruct = {}
         for template, templateInInteraction in dictTopo.iteritems():
             jsonStruct[template] = templateInInteraction
-            
+
         json.dump(jsonStruct, file(path, 'w'))
 
 
     def deSerialize(self, path):
-    
+
         with open (path, 'r') as file:
             data = json.load(file)
-            
+
             # Renitialize the dictionnary if it's not already emtpty
             if not len(self.newDic) == 0:
                 self.newDic.clear()
-            
+
             for template, templateInInteraction in data.iteritems():
                 self.newDic[template] = templateInInteraction
         return self.newDic
 
     #Extract information from the database (Intact here)
     #Creat two dictionnary, one representing the full interaction database (dico)
-    #The other one represent a reduced version of "dico", filtered with only interesting IDs 
+    #The other one represent a reduced version of "dico", filtered with only interesting IDs
     #(ones which bring back QueryIDs with their BLAST)
-    def parse_Intact_mitab(self, filePath):
+    # First we keep pairs of uniprot identifier, discarding all other type of interactor pair
+    def parseIntactMitab(self, filePath):
         dico = {}
         col1 = []
         col2 = []
@@ -55,8 +73,8 @@ class Topology(object):
             idOne = idOne.split(':')
             idTwo = idTwo.split(':')
             if idOne[0] == "uniprotkb" and idTwo[0] == "uniprotkb":
-                col1.append(idOne[1]) 
-                col2.append(idTwo[1]) 
+                col1.append(idOne[1])
+                col2.append(idTwo[1])
 
         CountIdOne = collections.Counter(col1)
         CountIdTwo = collections.Counter(col2)
@@ -94,19 +112,25 @@ class Topology(object):
                 for toDel in sorted(toRemove, reverse=True):
                     del colOne[toDel]
                     del colTwo[toDel]
-                    
-        return dico
 
-    def filter_With(self, filterPath) :
-        
-        dico = self.parse_Intact_mitab(self.filePath)
-        
+        self.rawDic = dico
+
+    def filterWith(self, filterPath) :
+
+        if(self.rawDicLen == 0):
+            raise ValueError('You must parse a mitab file prior to filtering entries')
+
         allIdInR6 = []
+        t = re.compile("^([\w]+)")
         for line in open(filterPath):
             if ":" not in line and line != "\n":
-                allIdInR6.append(line[:-1])
+                m=t.match(line)
+                if m:
+                    allIdInR6.append(m.groups()[0])
 
-        oldDic = dico.copy()
+        print "Number of intact uniprotID w/ R6 homologs " + str(len(allIdInR6))
+
+        oldDic = self.rawDic.copy()
         tryId = ""
         for tryId in self.sortedByOccurences:
             if tryId not in allIdInR6:
@@ -114,4 +138,4 @@ class Topology(object):
                 oldDic = {k: [e for e in v if e != tryId] for k, v in oldDic.iteritems()}
 
         self.newDic = dict((k, v) for k, v in oldDic.iteritems() if v)
-        return self.newDic
+        #return self.newDic
