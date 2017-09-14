@@ -43,7 +43,7 @@ class Node(object):
         if cmp(self.query, other.query) < 0:
             return True
         return False
-        
+
 
 
 ''' This class store a node object which define the homology between a template and a query'''
@@ -83,7 +83,7 @@ class hOmegaVector(object):
 
     # This method take as input a XML Blast Output (xmlFile) that can filter using a query list (idQueryList)
     def _xmlRead(self, xmlFile, idQueryList):
-        
+
         getXML = []
         currentXML = None
 
@@ -98,14 +98,14 @@ class hOmegaVector(object):
 
         with open(idQueryList, 'r') as f:
             for line in f:
-                idList.append(line.split("|")[1])     
+                idList.append(line.split("|")[1])
         fileName = xmlFile
 
         ## Extract from xml tree, the subtrees containing Hit_accession node text value present in idList
         ## Get last iteration
         #tree=ET.parse(fileName)
         #tree.getroot()
-        root = currentXML[0][1] 
+        root = currentXML[0][1]
         parent_map = {c:p for p in root.iter() for c in p}
 
         blast_all_iter_node = root.find('./BlastOutput_iterations')
@@ -118,7 +118,7 @@ class hOmegaVector(object):
                 #print "removing iteration " + str(iter_node)
                 #print "from " + str(blast_all_iter_node)
                 blast_all_iter_node.remove(iter_node)
-                
+
         lastIter = parent_map[lastIter_subnode]
         Iteration_hits_node = lastIter.find("./Iteration_hits")
         if Iteration_hits_node is not None:
@@ -129,38 +129,38 @@ class hOmegaVector(object):
                     Iteration_hits_node.remove(hit)
                 else :
                     allQIdList[id.text] = []
-                    coverList = []     
+                    coverList = []
                     ## Get hit score information and display stdout
                     # loop over Hsp get Hsp_hit-from, Hsp_hit-to
                     # permier arrive premier dedans
                     # condition pour rentrer, etre non-chevauchant avec ceux deja presents.
                     allowed = True
-                 
+
 
                     #Iteration_hits_node.findall("./Hit/Hit_hsps/Hsp"):
                     for hsp in hit.findall("./Hit_hsps/Hsp"):
-                        Hfrom = hsp[6].text  
+                        Hfrom = hsp[6].text
                         Hto = hsp[7].text
                         seq = ""
 
                         for seq in coverList:
                             #print seq, Hfrom, Hto
-                      
+
                             if (int(seq[0]) <= int(Hfrom) <= int(seq[1])) or (int(seq[0]) <= int(Hto) <= int(seq[1])):
                                 allowed = False
                             if (int(Hfrom) <= int(seq[0]) and  int(Hto) >= int(seq[1])):
                                 allowed = False
 
                         if allowed:
-                            allQIdList[id.text].append(([Hfrom, 
-                                          Hto, 
-                                          hit.find("Hit_hsps/Hsp/Hsp_positive").text, 
-                                          hit.find("Hit_hsps/Hsp/Hsp_identity").text, 
-                                          hit.find("Hit_hsps/Hsp/Hsp_evalue").text, 
+                            allQIdList[id.text].append(([Hfrom,
+                                          Hto,
+                                          hit.find("Hit_hsps/Hsp/Hsp_positive").text,
+                                          hit.find("Hit_hsps/Hsp/Hsp_identity").text,
+                                          hit.find("Hit_hsps/Hsp/Hsp_evalue").text,
                                           lenQuery]))
-                            
+
                             coverList.append((Hfrom, Hto))
-            
+
             # Si on trouve des ID Query homologue a notre Template
             if len(allQIdList) > 0:
                 for idQuery in allQIdList:
@@ -169,7 +169,7 @@ class hOmegaVector(object):
                     self.data.append(homologPair(self.idTemplate, idQuery, allQIdList[idQuery]))
                 return self.data
             else:
-                return None 
+                return None
 
     def xmlSplitter(self, data, separator=lambda x: x.startswith('<?xml')):
         buff = []
@@ -200,7 +200,7 @@ This has the dimension of the number of template with query hits
 Guillaume would like us to implement an access by a query key !!
 
 
-                
+
 
 
 '''
@@ -225,10 +225,10 @@ class HomegaSet(object):
         if 'path' in kwargs:
             for xmlFileName in self._findXml(kwargs['path']):
                 self.add(xmlFile=xmlFileName)
-        
+
         elif 'bean' in kwargs:
             self.deSerialize(kwargs['bean'])
-    
+
     # Check if the path is a repository of JSon file or single file
     # Browse recursively the path if is a repository and catch all JSon files
 
@@ -256,11 +256,11 @@ class HomegaSet(object):
 
         if hOmegaVectorObj.idTemplate in self.dict:
             raise ValueError( str(hOmegaVectorObj.idTemplate) + " is already part of the set")
-        
+
         # Store current vector in set
         self.data.append(hOmegaVectorObj)
         self.dict[hOmegaVectorObj.idTemplate] = hOmegaVectorObj
-       
+
     def __getitem__(self, value):
         if value not in  self.dict:
             return None
@@ -282,7 +282,7 @@ class HomegaSet(object):
                 return self
             else:
                 raise ValueError ("The vector is "+vector.idTemplate+" already in the omegaSet")
-    
+
     def __add__(self, other):
         for vector in other.data:
             if not vector.idTemplate in self.dict:
@@ -295,7 +295,7 @@ class HomegaSet(object):
     def __len__(self):
         return len(self.data)
 
-    # Generated a JSon file 
+    # Generated a JSon file
     def serialize(self, path):
         jsonStruct = { "vectors" : [ v.serialize() for v in self.data ], "queryID" : None}
         if 'self.idQueryList' in globals():
@@ -307,7 +307,7 @@ class HomegaSet(object):
     def deSerialize(self, path):
         with open (path, 'r') as file:
             data = json.load(file)
-            
+
             for v in data['vectors']:
                 #print v
                 if not v['template ID'] in self.dict:
@@ -319,7 +319,7 @@ class HomegaSet(object):
                          vector.data.append(homologPair( hp['template'], hp['query'], hp['param']))
                     self.data.append(vector)
                     self.dict[vector.idTemplate] = vector
-               
+
                 else:
                         print ('Already exist')
 
@@ -348,10 +348,10 @@ class fullMatrix(object):
 ##
 class OmegaMatrix(object):
     def __init__(self, **kwargs):
-        
+
         if not 'topo' in kwargs or not 'omegaSet' in kwargs:
             raise ValueError ('Provide a topographic file and a omegaSet')
-        
+
         if 'topo' in kwargs and 'omegaSet' in kwargs:
             self.topo = kwargs['topo']
             self.omegaSet = kwargs['omegaSet']
@@ -362,7 +362,7 @@ class OmegaMatrix(object):
 
     ## EXPLICATION
     def reduceAndVectorInject(self):
-        
+
         if isinstance(self.topo, dict):
             for key, value in self.topo.iteritems():
                 if key in self.omegaSet.dict:
@@ -380,9 +380,9 @@ class OmegaMatrix(object):
                         continue
 
             #print self.dict
-    
+
     def _multiMatrix(self, omegaVectorID_A, omegaVectorID_B):
-        
+
         omegaVectorA = self.dict[omegaVectorID_A].data
         omegaVectorB = self.dict[omegaVectorID_B].data
         homologPairListA = [query for query in omegaVectorA]
@@ -399,7 +399,7 @@ class OmegaMatrix(object):
     def project(self): ## C'est project qui doit prenre un fichier de liste de pair ou _getTemplatePairs ?
         queryMatrixObj = QueryMatrix()
         for (omegaVector_A, omegaVector_B) in self._getTemplatePairs():
-            queryTopology = self.mapMiniMatrix(omegaVector_A, omegaVector_B) 
+            queryTopology = self.mapMiniMatrix(omegaVector_A, omegaVector_B)
             queryMatrixObj.add(queryTopology)
 
         return queryMatrixObj
@@ -410,19 +410,19 @@ class OmegaMatrix(object):
         for pKey in self.reduceTopo:
             for sKey in self.reduceTopo[pKey]:
                 yield (pKey, sKey)
-            
+
     def mapMiniMatrix(self, omegaVector_A, omegaVector_B):
         miniMatrix = self._multiMatrix(omegaVector_A.idTemplate, omegaVector_B.idTemplate)
         queryTopo = {}
         for x in range(miniMatrix.shape[0]):
             for y in range(miniMatrix.shape[1]):
                 (NodeObjA, NodeObjB) = miniMatrix[x, y]
-                
+
                 # These 2 queries in interactions
                 #queryID_A = pos[0]
                 #queryID_B = pos[1]
 
-                storeArray = None
+                #storeArray = None
 
                 lo_query = NodeObjA if NodeObjA < NodeObjB else NodeObjB # Opt-in 1ry key
                 hi_query = NodeObjA if NodeObjA > NodeObjB else NodeObjB
@@ -432,17 +432,19 @@ class OmegaMatrix(object):
 
                 if lo_query in queryTopo:
                     #print queryTopo[lo_query]
-                    
+
                     if hi_query not in queryTopo[lo_query]:
                         queryTopo[lo_query][hi_query] = []
                 else:
                     queryTopo[lo_query] = { hi_query : [] }
 
-                storeArray = queryTopo[lo_query][hi_query]
 
-                
-                # FORMAT PARAMETERS ? 
-                storeArray.append({'loQueryParam' : lo_query.param[0], 'hiQueryParam' : hi_query.param[0]})
+                queryTopo[lo_query][hi_query].append({'loQueryParam' : lo_query.param[0], 'hiQueryParam' : hi_query.param[0]})
+
+                #DEPRECATED
+                #storeArray = queryTopo[lo_query][hi_query]
+                # FORMAT PARAMETERS ?
+                #storeArray.append({'loQueryParam' : lo_query.param[0], 'hiQueryParam' : hi_query.param[0]})
             #print queryTopo
         return queryTopo
 
@@ -458,17 +460,18 @@ class QueryMatrix(object):
         self.ghost_edges = []
         self.dictQuery = {}
 
+    # Refreshing global topology with a subtopoloy, aka miniMatrix obtained by carresian product of 2 omegaVectors
     def add(self, queryTopo):
         self.queryTopo.append(queryTopo)
 
         # Add memories adresses for a given Node
         for nKey, nVal in queryTopo.iteritems():
-
+            print str(nKey) + " ___ " + str(nVal)
             if not nKey.query in self.dictQuery:
                 self.dictQuery[nKey.query] = [nKey]
             else:
                 self.dictQuery[nKey.query].append(nKey)
-            
+
             for hQuery in nVal:
                 if not hQuery.query in self.dictQuery:
                     self.dictQuery[hQuery.query] = [hQuery]
@@ -482,9 +485,9 @@ class QueryMatrix(object):
             for interaction in self.queryTopo:
                 for lowQuery in interaction:
                     for highQuery in interaction[lowQuery]:
-                        yield {'lowQuery' : lowQuery, 'highQuery' : highQuery, 
+                        yield {'lowQuery' : lowQuery, 'highQuery' : highQuery,
                         'loQueryEval' : [param['loQueryParam'] for param in interaction[lowQuery][highQuery]],
-                        'hiQueryEval' : [param['hiQueryParam'] for param in interaction[lowQuery][highQuery]]} 
+                        'hiQueryEval' : [param['hiQueryParam'] for param in interaction[lowQuery][highQuery]]}
 
     def serialize(self):
         pass
