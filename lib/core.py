@@ -446,6 +446,8 @@ class OmegaMatrix(object):
                 # FORMAT PARAMETERS ?
                 #storeArray.append({'loQueryParam' : lo_query.param[0], 'hiQueryParam' : hi_query.param[0]})
             #print queryTopo
+        print "QT"
+        print queryTopo
         return queryTopo
 
     def serialize(self):
@@ -466,7 +468,7 @@ class QueryMatrix(object):
 
         # Add memories adresses for a given Node
         for nKey, nVal in queryTopo.iteritems():
-            print str(nKey) + " ___ " + str(nVal)
+           # print str(nKey) + " ___ " + str(nVal)
             if not nKey.query in self.dictQuery:
                 self.dictQuery[nKey.query] = [nKey]
             else:
