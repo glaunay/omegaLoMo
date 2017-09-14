@@ -446,8 +446,6 @@ class OmegaMatrix(object):
                 # FORMAT PARAMETERS ?
                 #storeArray.append({'loQueryParam' : lo_query.param[0], 'hiQueryParam' : hi_query.param[0]})
             #print queryTopo
-        print "QT"
-        print queryTopo
         return queryTopo
 
     def serialize(self):
