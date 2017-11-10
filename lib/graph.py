@@ -16,10 +16,10 @@ class Interactome(object):
     def drawGraph(self):
         G=nx.Graph()
         for interaction in self.queryTopo.getEdges(blacklist=None):
-            G.add_edge(interaction['lowQuery'], interaction['highQuery'], 
+            G.add_edge(interaction['lowQuery'], interaction['highQuery'],
                        lowQueryParam = [lowQueryEval for lowQueryEval in interaction['loQueryEval']] ,
                        highQueryParam = [highQueryEval for highQueryEval in interaction['hiQueryEval']])
-        
+
         # Remove Node with no interactions -- /!\ A REVOIR
         for node in G.node.keys():
             if len(G.neighbors(node)) <= 1:
@@ -33,48 +33,50 @@ class Interactome(object):
         return neighboorGraph
 
     def filterGraph(self, neighborsGraph, **kwargs):
-        
+
         G=nx.Graph()
         fig1 = plt.figure(random.randint(0, 1000))
         ax1 = fig1.add_subplot(111)
-        
+
         graph = neighborsGraph.graphData
 
         coverage = 1
         identity = 1
         similarity = 1
-        
+
         for param in kwargs:
             if param == 'coverage':
                 coverage = kwargs['coverage']
             if param == 'identity':
                 identity = kwargs['identity']
             if param == 'similarity':
-                identity = kwargs['similarity']
-        
+                similarity = kwargs['similarity']
+
         G = copy.deepcopy(graph)
-        
+
         for edge in G.edge:
             for node in G[edge].keys():
                 for i, lowQueryEval in enumerate(G[edge][node]['lowQueryParam']):
-                    
+
                     coverPerCent =  self.coverageCalculation(lowQueryEval[0], lowQueryEval[1], lowQueryEval[8])
                     idPerCent = self.idCalculation(lowQueryEval[0], lowQueryEval[1], lowQueryEval[3])
                     simiPerCent = self.simiCalculation(lowQueryEval[0], lowQueryEval[1], lowQueryEval[2])
-                    
-                    if float(lowQueryEval[4]) > float(kwargs['evalue']) or float(coverPerCent) < float(coverage) or idPerCent < identity or simiPerCent < similarity:
+
+#                    print str(coverPerCent) + " " + str(idPerCent) + " " + str(simiPerCent)
+
+                    if float(lowQueryEval[4]) > float(kwargs['evalue']) or float(coverPerCent) < float(coverage) or float(idPerCent) < float(identity) or float(simiPerCent) < float(similarity):
                         G.adj[edge][node]['highQueryParam'].pop(i)
                         G.adj[edge][node]['lowQueryParam'].pop(i)
                         break
-                
+
                 #if node in G[edge] and len(G[edge][node]['highQueryParam']) > 0:
                 for i, highQueryEval in enumerate(G[edge][node]['highQueryParam']):
-                    
+
                     coverPerCent =  self.coverageCalculation(highQueryEval[0], highQueryEval[1], highQueryEval[8])
                     idPerCent = self.idCalculation(highQueryEval[0], highQueryEval[1], highQueryEval[3])
                     simiPerCent = self.simiCalculation(highQueryEval[0], highQueryEval[1], highQueryEval[2])
-                    
-                    if  float(highQueryEval[4]) > float(kwargs['evalue']) or float(coverPerCent) < float(coverage) or idPerCent < identity or simiPerCent < similarity:
+
+                    if  float(highQueryEval[4]) > float(kwargs['evalue']) or float(coverPerCent) < float(coverage) or float(idPerCent) < float(identity) or float(simiPerCent) < float(similarity):
                         G.adj[edge][node]['highQueryParam'].pop(i)
                         G.adj[edge][node]['lowQueryParam'].pop(i)
                         break
@@ -100,7 +102,7 @@ class Interactome(object):
         neighborsGraph.graphData = G
         nx.draw_networkx(neighborsGraph.graphData, with_labels = True)
         plt.show()
-        print ', '.join([fn for fn in neiglist]) 
+        print ', '.join([fn for fn in neiglist])
         return neighborsGraph
 
     def coverageCalculation(self, minSeq, maxSeq, totalSeq):
@@ -120,7 +122,7 @@ class Interactome(object):
         for k, v in neighborsGraph.graph.edge.iteritems():
             for value in v:
                 print k, value, neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][4],neighborsGraph.graph.edge[k][value]['highQueryParam'][0][4], self.coverageCalculation(neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][0],
-                 neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][1], 
+                 neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][1],
                  neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][5])
         '''
 
@@ -132,7 +134,7 @@ class Interactome(object):
         all_identity = []
         all_similarity = []
         edge_minValue = []
-        
+
         plotlow = []
         plothig = []
 
@@ -157,33 +159,34 @@ class Interactome(object):
 
 
                             for low in param['lowQueryParam']:
-                                
+
                                 coverPerCent = self.coverageCalculation(low[0], low[1], low[8])
                                 #if coverPerCent > 100:
                                     #print query.query, query.template, neighbor.query, neighbor.template, coverPerCent, param
                                 idPerCent = self.idCalculation(low[0], low[1], low[3])
                                 simiPerCent = self.simiCalculation(low[0], low[1], low[2])
+                                print simiPerCent
 
                                 all_evalue.append(math.log10(float(low[4])))
                                 all_coverage.append(coverPerCent)
                                 all_identity.append(idPerCent)
                                 all_similarity.append(simiPerCent)
-                            
-                            
+
+
                             for high in param['highQueryParam']:
                                 coverPerCent = self.coverageCalculation(high[0], high[1], high[8])
                                 #if coverPerCent > 100:
                                 #    print query.query, query.template, neighbor.query, neighbor.template, coverPerCent
                                 idPerCent = self.idCalculation(high[0], high[1], high[3])
                                 simiPerCent = self.simiCalculation(high[0], high[1], high[2])
-                                
+
                                 # Transform to log scale for th evalue
                                 all_evalue.append(math.log10(float(high[4])))
                                 all_coverage.append(coverPerCent)
                                 all_identity.append(idPerCent)
                                 all_similarity.append(simiPerCent)
-                    
-        
+
+
         sorted_all_evalue_per_cent = sorted([ev for ev in all_evalue])
         sorted_all_coverage = sorted(all_coverage)
         sorted_all_identity = sorted(all_identity)
@@ -204,7 +207,7 @@ class Interactome(object):
         green_patch = mpatches.Patch(color='green', label='Coverage')
         blue_patch = mpatches.Patch(color='blue', label='Identity')
         yellow_patch = mpatches.Patch(color='yellow', label='Similarity')
-        
+
         if not len(graph.edge) == 0 :
 
             fig1 = plt.figure(random.randint(0, 1000))
@@ -271,19 +274,19 @@ class NeighboorGraph(object):
         if draw :
             fig1 = plt.figure(random.randint(0, 1000))
             ax1 = fig1.add_subplot(111)
-        
+
         # Declaration des variables
         neighborParam = []
         queryParam = []
         for query in self.graphParent.edge:
             if query.query == self.queryCenter:
                 for neighbor, param in self.graphParent.edge[query].iteritems():
-                    
+
                     # Append all neighboors ID
                     self.neighborsList.append(neighbor.query)
 
                     # Creation de edges
-                    G.add_edge(query, neighbor, 
+                    G.add_edge(query, neighbor,
                         lowQueryParam = param['lowQueryParam'],
                         highQueryParam = param['highQueryParam'])
 
@@ -298,7 +301,7 @@ class NeighboorGraph(object):
         # Build 1st Neighboor edges
         self._generateNeighboorList(copyNeighboorGraph)
         for edge in self.retrieveNeighboorsEdges(copyNeighboorGraph.graphParent.edge, copyNeighboorGraph.neighborsList):
-            G.add_edge(edge[0], edge[1], 
+            G.add_edge(edge[0], edge[1],
                 lowQueryParam = edge[2],
                 highQueryParam = edge[3])
 
@@ -309,7 +312,7 @@ class NeighboorGraph(object):
 
 
     def retrieveNeighboorsEdges(self, fullGraphEdge, listNeighboors):
-        
+
         listNeighboorsEdges = []
 
         for query in self.graphParent.edge:
@@ -340,7 +343,7 @@ class NeighboorGraph(object):
 
         for query in neighboorGraph.graphData.edge:
             if query.query == neighboorGraph.queryCenter:
-                for neighbor, param in neighboorGraph.graphData.edge[query].iteritems():   
+                for neighbor, param in neighboorGraph.graphData.edge[query].iteritems():
                     # Append all neighboors ID
                     neighboorGraph.neighborsList.append(neighbor.query)
 
@@ -366,7 +369,7 @@ class dataOperations(object):
                                                                       "highQueryParam" : [high for high in param["highQueryParam"]]}
         json.dump(jsonStruct, file(path, 'w'))
 
-    
+
     def deserializeGraph(self, beanPath):
         G=nx.Graph()
         fig1 = plt.figure(random.randint(0, 1000))
@@ -377,14 +380,14 @@ class dataOperations(object):
             for query in data['Queries']:
                 for neighbor, param in data['Queries'][query].iteritems():
                         # Creation de edges
-                    G.add_edge(self.queryData.dictQuery[query][0], self.queryData.dictQuery[neighbor][0], 
+                    G.add_edge(self.queryData.dictQuery[query][0], self.queryData.dictQuery[neighbor][0],
                                lowQueryParam = [low for low in param['lowQueryParam']],
                                highQueryParam = [high for high in param['highQueryParam']])
 
         nx.draw_networkx(G, with_labels = True)
         plt.show()
 
-        return 
+        return
 
 
 
