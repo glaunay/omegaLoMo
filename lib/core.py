@@ -44,7 +44,8 @@ class Node(object):
         if cmp(self.query, other.query) < 0:
             return True
         return False
-
+    def __repr__(self):
+        return self.query
 
 
 ''' This class store a node object which define the homology between a template and a query'''
@@ -81,12 +82,6 @@ class hOmegaVector(object):
 
     def __str__(self):
         return self.idTemplate
-
-  # This method take as input a json transformed Blast Output that can filter using a query list (idQueryList)
-
-    #def _jsonRead(self, jsonFile, idQueryList):
-
-
 
     # This method take as input a XML Blast Output (xmlFile) that can filter using a query list (idQueryList)
     def _xmlRead(self, xmlFile, idQueryList):
@@ -169,10 +164,12 @@ class hOmegaVector(object):
                                           hit.find("Hit_hsps/Hsp/Hsp_positive").text,
                                           hit.find("Hit_hsps/Hsp/Hsp_identity").text,
                                           hit.find("Hit_hsps/Hsp/Hsp_evalue").text,
-                                          lenQuery]))
+                                          lenQuery,
+                                          hit.find("Hit_hsps/Hsp/Hsp_query-from").text,
+                                          hit.find("Hit_hsps/Hsp/Hsp_query-to").text,
+                                          hit.find("Hit_len").text]))
 
                             coverList.append((Hfrom, Hto))
-
             # Si on trouve des ID Query homologue a notre Template
             if len(allQIdList) > 0:
                 for idQuery in allQIdList:
@@ -182,6 +179,11 @@ class hOmegaVector(object):
                 return self.data
             else:
                 return None
+
+    def printHomologs(self):
+        for homolPairObj in self.data:
+            #print homolPairObj.param
+            print homolPairObj.query + ":" + '|'.join(','.join(s) for s in homolPairObj.param) + '\n'
 
     def xmlSplitter(self, data, separator=lambda x: x.startswith('<?xml')):
         buff = []
@@ -206,38 +208,25 @@ class hOmegaVector(object):
 
     def deSerialize(self):
         pass
+
+
 '''
 This is the collection of hOmegaVector
 This has the dimension of the number of template with query hits
-Guillaume would like us to implement an access by a query key !!
-
-
-
-
-
 '''
-
-#self.hOmegaData.add(xmlFile = blastPath, idQueryList=self.data['idQueryList'])
-
-
 class HomegaSet(object):
     def __init__(self, **kwargs):
         self.data = [] # this sis the collection of hOmegaVector
         self.dict = {} # store array addres of item to be accessed through template id as a key
-
+        self.idQueryList = None
 
 # Constructor mandatoray arguments
-        #if 'path' not in kwargs and 'bean' not in kwargs:
-        #    raise ValueError ("Provide a blast results folders tree or a serialized omegaSet")
-        #if 'path' in kwargs and 'queryIdList' not in kwargs:
-        #     raise ValueError ("If you provide a blast results folders tree, you must supply a query list")
-        #else :
         if 'queryIdList' in kwargs:
             self.idQueryList = kwargs["queryIdList"]
 
         if 'blastXmlPath' in kwargs:
-            print("path is here " + kwargs['path'])
-            for xmlFileName in self._findXml(kwargs['path']):
+            print("path is here " + kwargs['blastXmlPath'])
+            for xmlFileName in self._findXml(kwargs['blastXmlPath']):
                 print("reading from " + xmlFileName)
                 self.add(xmlFile=xmlFileName)
 
@@ -334,8 +323,8 @@ class HomegaSet(object):
     # Generated a JSon file
     def serialize(self, path):
         jsonStruct = { "vectors" : [ v.serialize() for v in self.data ], "queryID" : None}
-        if 'self.idQueryList' in globals():
-            jsonStruct[queryID] = self.idQueryList
+        if self.idQueryList:
+            jsonStruct['queryID'] = self.idQueryList
 
         json.dump(jsonStruct, file(path, 'w'))
 
@@ -422,7 +411,6 @@ class OmegaMatrix(object):
             self.templatePairs = []
             self.queryTopo = {} ### ATTRIBUT ?
 
-    ## EXPLICATION
     def reduceAndVectorInject(self):
 
         if isinstance(self.topo, dict):
@@ -522,7 +510,7 @@ class QueryMatrix(object):
         self.ghost_edges = []
         self.dictQuery = {}
 
-    # Refreshing global topology with a subtopoloy, aka miniMatrix obtained by carresian product of 2 omegaVectors
+    # Refreshing global topology with a subtopoloy, aka miniMatrix obtained by cartesian product of 2 omegaVectors
     def add(self, queryTopo):
         self.queryTopo.append(queryTopo)
 
@@ -543,13 +531,12 @@ class QueryMatrix(object):
 
     def getEdges(self, **kwargs):
 
-        if 'blacklist' in kwargs:
-            for interaction in self.queryTopo:
-                for lowQuery in interaction:
-                    for highQuery in interaction[lowQuery]:
-                        yield {'lowQuery' : lowQuery, 'highQuery' : highQuery,
-                        'loQueryEval' : [param['loQueryParam'] for param in interaction[lowQuery][highQuery]],
-                        'hiQueryEval' : [param['hiQueryParam'] for param in interaction[lowQuery][highQuery]]}
+        for interaction in self.queryTopo:
+            for lowQuery in interaction:
+                for highQuery in interaction[lowQuery]:
+                    yield {'lowQuery' : lowQuery, 'highQuery' : highQuery,
+                    'loQueryEval' : [param['loQueryParam'] for param in interaction[lowQuery][highQuery]],
+                    'hiQueryEval' : [param['hiQueryParam'] for param in interaction[lowQuery][highQuery]]}
 
     def serialize(self):
         pass
@@ -557,11 +544,24 @@ class QueryMatrix(object):
     def deSerialize(self): ## Loic already has a serialized omega matrix as dict..
         pass
 
+# For sbatch blast post-processing
+
+
+# GL -- 12/20/2017
+# Stand-alone call of the form
+# python core.py --blast2log/--blast2json  BLAST_FILE ID_QUERY_LIST_FILE
 if __name__ == '__main__':
-    path = sys.argv[1]
+    switch = sys.argv[1]
+    data = {'repFile' : sys.argv[2],
+       'queryIdList' : sys.argv[3]}
 
-    #data = {'repFile' : sys.argv[1],
-     #  'idQueryList' : sys.argv[2]}
+    if switch == '--blast2log':
+        hOmegaVectorObj = hOmegaVector()
+        hOmegaVectorObj._xmlRead(data['repFile'], data['queryIdList'])
+        hOmegaVectorObj.printHomologs()
 
-    #omegaSet = HomegaSet(path=data['repFile'], queryIdList=data['idQueryList'])
-    #omegaSet.serialize(sys.argv[3])
+    elif switch == '--blast2json':
+        omegaSet = HomegaSet(blastXmlPath=data['repFile'], queryIdList=data['queryIdList'])
+        omegaSet.serialize(sys.argv[4])
+    else :
+        raise ValueError('unrecognized command switch' + switch)

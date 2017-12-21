@@ -99,11 +99,8 @@ class Interactome(object):
 
 
         #print G.edge, G.node
-        neighborsGraph.graphData = G
-        nx.draw_networkx(neighborsGraph.graphData, with_labels = True)
-        plt.show()
         print ', '.join([fn for fn in neiglist])
-        return neighborsGraph
+        return G#, neighborsGraph
 
     def coverageCalculation(self, minSeq, maxSeq, totalSeq):
         coverPerCent =  int((((float(maxSeq) - float(minSeq)) + 1) / float(totalSeq)) * 100)
