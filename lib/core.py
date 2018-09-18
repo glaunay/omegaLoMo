@@ -33,15 +33,18 @@ class Node(object):
         return self.query
 
     def __eq__(self, other):
-        return self.query == other.query
+        return hash(self.query) == hash(other.query)
+
+    def __ne__(self, other):
+        return hash(self.query) != hash(other.query)
 
     def __gt__(self, other):
-        if cmp(self.query, other.query) > 0 :
+        if cmp(str(self.query), str(other.query)) > 0 :
             return True
         return False
 
     def __lt__(self, other):
-        if cmp(self.query, other.query) < 0:
+        if cmp(str(self.query), str(other.query)) < 0:
             return True
         return False
     def __repr__(self):
@@ -117,7 +120,7 @@ class hOmegaVector(object):
 
         blast_all_iter_node = root.find('./BlastOutput_iterations')
         self.idTemplate = root.find('./BlastOutput_query-def').text.split('|')[1]
-        lenQuery = root.find('./BlastOutput_query-len').text
+        lenTemplate = root.find('./BlastOutput_query-len').text
         lastIter_subnode=root.findall('./BlastOutput_iterations/Iteration/Iteration_iter-num')[-1]
         lastIter_number=lastIter_subnode.text
         for iter_node in root.findall('./BlastOutput_iterations/Iteration'):
@@ -164,7 +167,7 @@ class hOmegaVector(object):
                                           hit.find("Hit_hsps/Hsp/Hsp_positive").text,
                                           hit.find("Hit_hsps/Hsp/Hsp_identity").text,
                                           hit.find("Hit_hsps/Hsp/Hsp_evalue").text,
-                                          lenQuery,
+                                          lenTemplate,
                                           hit.find("Hit_hsps/Hsp/Hsp_query-from").text,
                                           hit.find("Hit_hsps/Hsp/Hsp_query-to").text,
                                           hit.find("Hit_len").text]))
@@ -489,7 +492,10 @@ class OmegaMatrix(object):
                     queryTopo[lo_query] = { hi_query : [] }
 
 
-                queryTopo[lo_query][hi_query].append({'loQueryParam' : lo_query.param[0], 'hiQueryParam' : hi_query.param[0]})
+                queryTopo[lo_query][hi_query].append({
+                    'loTemplate' : str(lo_query.template),
+                    'hiTemplate' : str(hi_query.template),
+                     'loQueryParam' : lo_query.param[0], 'hiQueryParam' : hi_query.param[0]})
 
                 #DEPRECATED
                 #storeArray = queryTopo[lo_query][hi_query]
@@ -533,10 +539,18 @@ class QueryMatrix(object):
 
         for interaction in self.queryTopo:
             for lowQuery in interaction:
+                #print dir(lowQuery)
                 for highQuery in interaction[lowQuery]:
-                    yield {'lowQuery' : lowQuery, 'highQuery' : highQuery,
-                    'loQueryEval' : [param['loQueryParam'] for param in interaction[lowQuery][highQuery]],
-                    'hiQueryEval' : [param['hiQueryParam'] for param in interaction[lowQuery][highQuery]]}
+
+                    for param in interaction[lowQuery][highQuery]:
+                        #print param
+
+
+                        yield {'lowQuery' : lowQuery,
+                           'highQuery' : highQuery,
+                           #'lowTemplate' : interaction[lowQuery][highQuery].
+                    'loQueryEval' : [ param['loQueryParam']  + [param['loTemplate']] for param in interaction[lowQuery][highQuery]],
+                    'hiQueryEval' : [ param['hiQueryParam']  + [param['hiTemplate']] for param in interaction[lowQuery][highQuery]]}
 
     def serialize(self):
         pass

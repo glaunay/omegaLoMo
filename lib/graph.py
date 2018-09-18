@@ -7,16 +7,158 @@ import random
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 
+
+
+'''
+A utility class to facilitate the visualisation of graph statistic in tabular format under jupyter
+'''
+
+class NodeView(object):
+    def __init__(self, G):
+        self.G = G
+    def _repr_html_(self):
+        htmlString = '<table><thead><th>Node</th><th>Degree</th></thead><tbody>'
+        d = nx.degree(self.G)
+        for n in sorted( [ { 'nodeRef' : k, 'degree' : d[k] } for k in d ], key=lambda k: k['degree'], reverse=True):
+            color = 'brown' if self.G.node[n['nodeRef']]['group'] == 1 else 'black'
+
+            htmlString += '<tr><td><a href="http://www.uniprot.org/uniprot/' + str(n['nodeRef']) + '" target="blank" style="color:' + color + '">' + str(n['nodeRef']) + '</td>'
+            htmlString += '<td>' + str(n['degree']) + '</td></tr>'
+
+        htmlString += '</tbody></table>'
+
+        return htmlString
+
+
 class Interactome(object):
 
     def __init__(self, queryTopo):
         self.queryTopo = queryTopo
         self.singleNode = {}
+        self._Gtotal = None
+        self.verbose=False
+        self._nodeView = None
 
-    def drawGraph(self):
+    def coverageCalculation(self, minSeq, maxSeq, totalSeq):
+        coverPerCent =  int((((float(maxSeq) - float(minSeq)) + 1) / float(totalSeq)) * 100)
+        return coverPerCent
+
+    def idCalculation(self, minSeq, maxSeq, idValue):
+        idPerCent =  int((float(idValue) / (float(maxSeq) - float(minSeq))) * 100)
+        return idPerCent
+
+    def simiCalculation(self, minSeq, maxSeq, simiValue):
+        simiCalculation =  int((float(simiValue) / (float(maxSeq) - float(minSeq))) * 100)
+        return simiCalculation
+
+    @property
+    def Gtotal(self):
+        if not self._Gtotal:
+            self._Gtotal = self.createGraph()
+
+        return self._Gtotal
+
+    # Returns a networkX graph object, applying optional filtering to the global graph
+    # We have to check for moification to the global graph through references
+    def graph(self, **kwargs):
+        G = self.Gtotal.copy()
+
+        if 'verbose' in kwargs:
+            self.verbose = kwargs['verbose']
+
+       # return G
+
+        seedNodes = kwargs['seedNodes'] if 'seedNodes' in kwargs else None
+        radius = kwargs['radius'] if 'radius' in kwargs else 1
+        coverage =  kwargs['coverage'] if 'coverage' in kwargs else 1
+        simPct =  kwargs['simPct'] if 'simPct' in kwargs else None
+
+# Extracting subnetwork around seeds and merge them
+        if seedNodes:
+            Gall = []
+            #totalNodes = set()
+            #scoreBoard = {}
+            for n in G.nodes():
+                if hash(n) in [ hash(ns) for ns in seedNodes ]:
+                    G.node[n]['group'] = 1
+                    Gtmp = nx.ego_graph(G, n, radius)
+                    Gall.append(Gtmp)
+                    if self.verbose:
+                        print str(len(Gtmp.nodes())) + " nodes around " + str(n)
+            G = Gall[0]
+            for i in range(1,len(Gall)):
+                G = nx.compose(G, Gall[i])
+
+# Graph utility functions
+        def trimEdgeData(G, edge, coverageTreshold=0.00, simTreshold=0.00):
+            e=G.get_edge_data(*edge)
+            remove_indices = []
+            for i, (leftNodeParam, rightNodeParam) in enumerate(zip(e['lowQueryParam'], e['highQueryParam'])):
+                leftCoverPerCent =  self.coverageCalculation(leftNodeParam[0], leftNodeParam[1], leftNodeParam[8])
+                rightCoverPerCent =  self.coverageCalculation(rightNodeParam[0], rightNodeParam[1], rightNodeParam[8])
+                leftSimPerCent =  self.simiCalculation(leftNodeParam[0], leftNodeParam[1], leftNodeParam[2])
+                rightSimPerCent =  self.simiCalculation(rightNodeParam[0], rightNodeParam[1], rightNodeParam[2])
+                if min(leftCoverPerCent, rightCoverPerCent) < coverageTreshold or min(leftSimPerCent, rightSimPerCent) < simTreshold:
+                    remove_indices.append(i)
+
+
+            if not remove_indices:
+                return
+
+            if self.verbose:
+                print "removing following edge data indices : " + str(remove_indices)
+
+            e['lowQueryParam'] = [ d for i,d in enumerate (e['lowQueryParam']) if i not in remove_indices ]
+            e['highQueryParam'] = [ d for i,d in enumerate (e['highQueryParam']) if i not in remove_indices ]
+
+            return
+
+        def edgeDepth(G, e):
+            d=G.get_edge_data(*e)
+            return len(d['lowQueryParam'])
+
+        if 'coverage' in kwargs or 'simPct' in kwargs:
+            totalEdges = 0
+            nodePairToPrune = []
+
+            for e in G.edges():
+                totalEdges += 1
+                if self.verbose:
+                    print 'intial depth of ' + str(e) + ' is ' + str(edgeDepth(G, e))
+                trimEdgeData(G, e, coverage, simPct)
+                if self.verbose:
+                    print 'trimmed depth of ' + str(e) + ' is ' + str(edgeDepth(G, e))
+                if edgeDepth(G, e) == 0:
+                    if self.verbose:
+                        print (str(e) + ' is an empty edge, registered for pruning')
+                    nodePairToPrune.append(e[:2])
+
+                    G.remove_edge(*e[:2]) # unpacks e from an edge tuple
+
+        print "Total number of pruned edges is " + str(len(nodePairToPrune)) + ' / ' + str(totalEdges)
+
+        #remove isolates
+        G.remove_nodes_from(nx.isolates(G))
+        #remove self connected only
+        toDel = []
+        for n in G.nodes():
+            if G.degree(n) > 1:
+                continue;
+            if G.neighbors(n)[0] == n:
+                print n + " is self connected only"
+                toDel.append(n)
+        #remove self-connected only
+        G.remove_nodes_from(toDel)
+
+        return G
+
+
+    def createGraph(self):
         G=nx.Graph()
         for interaction in self.queryTopo.getEdges(blacklist=None):
+
             G.add_edge(interaction['lowQuery'], interaction['highQuery'],
+
                        lowQueryParam = [lowQueryEval for lowQueryEval in interaction['loQueryEval']] ,
                        highQueryParam = [highQueryEval for highQueryEval in interaction['hiQueryEval']])
 
@@ -25,7 +167,15 @@ class Interactome(object):
             if len(G.neighbors(node)) <= 1:
                 self.singleNode[node.query] = node
                 G.remove_node(node)
+
+        nx.set_node_attributes(G, 'group', 0)
+        #print G.nodes(data=True)
+
         return G
+
+
+
+'''
 
     def createNeiGraph(self, query, graphParent, draw):
         neighboorGraph = NeighboorGraph(query, graphParent) # /!\ A FUSIONNER AVEC DRAWGRAPH SI ON PEUT plt.
@@ -101,27 +251,10 @@ class Interactome(object):
         #print G.edge, G.node
         print ', '.join([fn for fn in neiglist])
         return G#, neighborsGraph
+'''
 
-    def coverageCalculation(self, minSeq, maxSeq, totalSeq):
-        coverPerCent =  int((((float(maxSeq) - float(minSeq)) + 1) / float(totalSeq)) * 100)
-        return coverPerCent
-
-    def idCalculation(self, minSeq, maxSeq, idValue):
-        idPerCent =  int((float(idValue) / (float(maxSeq) - float(minSeq))) * 100)
-        return idPerCent
-
-    def simiCalculation(self, minSeq, maxSeq, simiValue):
-        simiCalculation =  int((float(simiValue) / (float(maxSeq) - float(minSeq))) * 100)
-        return simiCalculation
-
+'''
     def drawCurveParam(self, neighborsGraph):
-        '''
-        for k, v in neighborsGraph.graph.edge.iteritems():
-            for value in v:
-                print k, value, neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][4],neighborsGraph.graph.edge[k][value]['highQueryParam'][0][4], self.coverageCalculation(neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][0],
-                 neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][1],
-                 neighborsGraph.graph.edge[k][value]['lowQueryParam'][0][5])
-        '''
 
         graph = neighborsGraph.graphData
         queryCenter = neighborsGraph.queryCenter
@@ -258,6 +391,7 @@ class Interactome(object):
         print "Liste des 1ers voisine:\n"
         for node in neighbors_dict:
             print ', '.join([neighbor.query for neighbor in neighbors_dict[node]])
+'''
 
 class NeighboorGraph(object):
     def __init__(self, queryCenter, graphParent):
