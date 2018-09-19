@@ -19,7 +19,7 @@ class NodeView(object):
     def _repr_html_(self):
         htmlString = '<table><thead><th>Node</th><th>Degree</th></thead><tbody>'
         d = nx.degree(self.G)
-        for n in sorted( [ { 'nodeRef' : k, 'degree' : d[k] } for k in d ], key=lambda k: k['degree'], reverse=True):
+        for n in sorted( [ { 'nodeRef' : k[0], 'degree' : k[1] } for k in d ], key=lambda x: x['degree'], reverse=True):
             color = 'brown' if self.G.node[n['nodeRef']]['group'] == 1 else 'black'
 
             htmlString += '<tr><td><a href="http://www.uniprot.org/uniprot/' + str(n['nodeRef']) + '" target="blank" style="color:' + color + '">' + str(n['nodeRef']) + '</td>'
@@ -73,18 +73,19 @@ class Interactome(object):
         coverage =  kwargs['coverage'] if 'coverage' in kwargs else 1
         simPct =  kwargs['simPct'] if 'simPct' in kwargs else None
 
+
 # Extracting subnetwork around seeds and merge them
         if seedNodes:
             Gall = []
             #totalNodes = set()
             #scoreBoard = {}
             for n in G.nodes():
-                if hash(n) in [ hash(ns) for ns in seedNodes ]:
+                if hash(n) in [ hash(ns) for ns in seedNodes ]:                   
                     G.node[n]['group'] = 1
                     Gtmp = nx.ego_graph(G, n, radius)
                     Gall.append(Gtmp)
                     if self.verbose:
-                        print str(len(Gtmp.nodes())) + " nodes around " + str(n)
+                        print(str(len(Gtmp.nodes())) + " nodes around " + str(n))
             G = Gall[0]
             for i in range(1,len(Gall)):
                 G = nx.compose(G, Gall[i])
@@ -106,7 +107,7 @@ class Interactome(object):
                 return
 
             if self.verbose:
-                print "removing following edge data indices : " + str(remove_indices)
+                print("removing following edge data indices : " + str(remove_indices))
 
             e['lowQueryParam'] = [ d for i,d in enumerate (e['lowQueryParam']) if i not in remove_indices ]
             e['highQueryParam'] = [ d for i,d in enumerate (e['highQueryParam']) if i not in remove_indices ]
@@ -124,28 +125,31 @@ class Interactome(object):
             for e in G.edges():
                 totalEdges += 1
                 if self.verbose:
-                    print 'intial depth of ' + str(e) + ' is ' + str(edgeDepth(G, e))
+                    print('intial depth of ' + str(e) + ' is ' + str(edgeDepth(G, e)))
                 trimEdgeData(G, e, coverage, simPct)
                 if self.verbose:
-                    print 'trimmed depth of ' + str(e) + ' is ' + str(edgeDepth(G, e))
+                    print('trimmed depth of ' + str(e) + ' is ' + str(edgeDepth(G, e)))
                 if edgeDepth(G, e) == 0:
                     if self.verbose:
                         print (str(e) + ' is an empty edge, registered for pruning')
                     nodePairToPrune.append(e[:2])
 
-                    G.remove_edge(*e[:2]) # unpacks e from an edge tuple
+            for e in nodePairToPrune:
+                G.remove_edge(*e) # unpacks e from an edge tuple
 
-        print "Total number of pruned edges is " + str(len(nodePairToPrune)) + ' / ' + str(totalEdges)
+        print("Total number of pruned edges is " + str(len(nodePairToPrune)) + ' / ' + str(totalEdges))
 
         #remove isolates
-        G.remove_nodes_from(nx.isolates(G))
+        lonelyNodes = [ n for n in nx.isolates(G) ]
+        G.remove_nodes_from(lonelyNodes)
         #remove self connected only
         toDel = []
         for n in G.nodes():
             if G.degree(n) > 1:
                 continue;
-            if G.neighbors(n)[0] == n:
-                print n + " is self connected only"
+            _neighbors = [ _n for _n in G.neighbors(n) ]
+            if _neighbors[0] == n:
+                print(n + " is self connected only")
                 toDel.append(n)
         #remove self-connected only
         G.remove_nodes_from(toDel)
@@ -155,22 +159,25 @@ class Interactome(object):
 
     def createGraph(self):
         G=nx.Graph()
+        self.singleNode = {}
+
         for interaction in self.queryTopo.getEdges(blacklist=None):
-
             G.add_edge(interaction['lowQuery'], interaction['highQuery'],
-
-                       lowQueryParam = [lowQueryEval for lowQueryEval in interaction['loQueryEval']] ,
-                       highQueryParam = [highQueryEval for highQueryEval in interaction['hiQueryEval']])
+                lowQueryParam = [lowQueryEval for lowQueryEval in interaction['loQueryEval']] ,
+                highQueryParam = [highQueryEval for highQueryEval in interaction['hiQueryEval']])
 
         # Remove Node with no interactions -- /!\ A REVOIR
+
         for node in G.node.keys():
-            if len(G.neighbors(node)) <= 1:
+            _neighbors = [ _n for _n in G.neighbors(node) ]
+            if len(_neighbors) <= 1:
                 self.singleNode[node.query] = node
-                G.remove_node(node)
 
-        nx.set_node_attributes(G, 'group', 0)
+        for sN in self.singleNode.items() :
+            G.remove_node(sN[1])
+
+        nx.set_node_attributes(G, 0, 'group')
         #print G.nodes(data=True)
-
         return G
 
 

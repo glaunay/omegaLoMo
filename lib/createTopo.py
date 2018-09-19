@@ -38,7 +38,7 @@ class Topology(object):
     def serialize(self, dictTopo, path):
 
         jsonStruct = {}
-        for template, templateInInteraction in dictTopo.iteritems():
+        for template, templateInInteraction in dictTopo.items():
             jsonStruct[template] = templateInInteraction
 
         json.dump(jsonStruct, file(path, 'w'))
@@ -53,7 +53,7 @@ class Topology(object):
             if not len(self.newDic) == 0:
                 self.newDic.clear()
 
-            for template, templateInInteraction in data.iteritems():
+            for template, templateInInteraction in data.items():
                 self.newDic[template] = templateInInteraction
         return self.newDic
 
@@ -128,7 +128,7 @@ class Topology(object):
                 if m:
                     allIdInR6.append(m.groups()[0])
 
-        print "Number of intact uniprotID w/ R6 homologs " + str(len(allIdInR6))
+        print("Number of intact uniprotID w/ R6 homologs " + str(len(allIdInR6)) )
 
         oldDic = self.rawDic.copy()
         tryId = ""

@@ -33,20 +33,26 @@ class Node(object):
         return self.query
 
     def __eq__(self, other):
-        return hash(self.query) == hash(other.query)
+        return hash(self) == hash(other)
 
     def __ne__(self, other):
-        return hash(self.query) != hash(other.query)
+        return hash(self) != hash(other)
 
     def __gt__(self, other):
-        if cmp(str(self.query), str(other.query)) > 0 :
-            return True
-        return False
+        return hash(self) > hash(other) 
+       # if (len(str(self.query))
+        #if cmp(str(self.query), str(other.query)) > 0 :
+        #if ( str(self.query) > str(other.query) ) - ( str(self.query) <  str(other.query) ) > 0:
+        #    return True
+        #return False
 
     def __lt__(self, other):
-        if cmp(str(self.query), str(other.query)) < 0:
-            return True
-        return False
+        #if cmp(str(self.query), str(other.query)) < 0:
+        # https://codegolf.stackexchange.com/questions/49778/how-can-i-use-cmpa-b-with-python3
+        #if ( str(self.query) > str(other.query) ) - ( str(self.query) <  str(other.query) ) < 0:
+        #    return True
+        #return False
+        return hash(self) < hash(other) 
     def __repr__(self):
         return self.query
 
@@ -186,7 +192,7 @@ class hOmegaVector(object):
     def printHomologs(self):
         for homolPairObj in self.data:
             #print homolPairObj.param
-            print homolPairObj.query + ":" + '|'.join(','.join(s) for s in homolPairObj.param) + '\n'
+            print(homolPairObj.query + ":" + '|'.join(','.join(s) for s in homolPairObj.param) + '\n')
 
     def xmlSplitter(self, data, separator=lambda x: x.startswith('<?xml')):
         buff = []
@@ -298,7 +304,7 @@ class HomegaSet(object):
     def __str__(self):
         jsonStruct = { "vectors" : [ v.serialize() for v in self.data ], "queryID" : None}
         if 'self.idQueryList' in globals():
-            jsonStruct[queryID] = self.idQueryList
+            jsonStruct["queryID"] = self.idQueryList
 
         return json.dumps(jsonStruct)
 
@@ -417,7 +423,7 @@ class OmegaMatrix(object):
     def reduceAndVectorInject(self):
 
         if isinstance(self.topo, dict):
-            for key, value in self.topo.iteritems():
+            for key, value in self.topo.items():
                 if key in self.omegaSet.dict:
                     self.reduceTopo[self.omegaSet.dict[key]] = []
                     self.dict[key] = self.omegaSet.dict[key]
@@ -467,6 +473,7 @@ class OmegaMatrix(object):
     def mapMiniMatrix(self, omegaVector_A, omegaVector_B):
         miniMatrix = self._multiMatrix(omegaVector_A.idTemplate, omegaVector_B.idTemplate)
         queryTopo = {}
+
         for x in range(miniMatrix.shape[0]):
             for y in range(miniMatrix.shape[1]):
                 (NodeObjA, NodeObjB) = miniMatrix[x, y]
@@ -479,6 +486,7 @@ class OmegaMatrix(object):
 
                 lo_query = NodeObjA if NodeObjA < NodeObjB else NodeObjB # Opt-in 1ry key
                 hi_query = NodeObjA if NodeObjA > NodeObjB else NodeObjB
+                
                 if NodeObjA  == NodeObjB:
                     lo_query = NodeObjA
                     hi_query = NodeObjB
@@ -521,7 +529,7 @@ class QueryMatrix(object):
         self.queryTopo.append(queryTopo)
 
         # Add memories adresses for a given Node
-        for nKey, nVal in queryTopo.iteritems():
+        for nKey, nVal in queryTopo.items():
            # print str(nKey) + " ___ " + str(nVal)
             if not nKey.query in self.dictQuery:
                 self.dictQuery[nKey.query] = [nKey]
