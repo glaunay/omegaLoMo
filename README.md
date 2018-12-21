@@ -1,100 +1,51 @@
-<p align="center"><img src="./pictures/logomegalomo.png" alt="Drawing" style="width: 400px;"/></p>
+# Building Protein Interaction Network
 
-Finding new interactions between proteins in a proteome, based on sequence homology.
+Collection of notebook
 
-<img src="./pictures/FullPipeline.png" alt="Drawing" style="width: 1000px;"/>
+Need doc on api of 
 
-## Getting Started
-
-Follow instructions below to make a version of OmegaLoMo run on your computer.
-
-### Prerequisites
-
-
-This pipeline is currently using [Jupyter](http://jupyter.org/) to work.
-
-It also uses [Python 2.7](https://www.python.org/download/releases/2.7/) and more particularly these packages :
-
-
-```python
-import sys
-import networkx as nx
-import numpy as np
-import matplotlib.pyplot as plt
-import copy
-import json
-```
-
-
-### Installing
-
-First of all, you have to download the full package.
-
-The first step is to clone the git repository. In order to do that, open a terminal console and write this command line :
-
-```
-git clone https://github.com/glaunay/omegaLoMo.git 
-```
-
-Import the package to your .py project
-
-```
-import PACKAGE_PATH.core as core
-import PACKAGE_PATH.createTopo as cT
-import PACKAGE_PATH.graph as graph
-import PACKAGE_PATH.smallWork as sW
-```
+* DB FS
+* mitabTopologyObject
+* omega package
 
 
 
+## Target Proteome
+ * Specie: Pneumococcus Pneumoniae strain ATCC BAA-255 / R6
+ * Size : 2033 proteins in fasta sequences
+
+### Enriching 
+
+##### Collecting Uniclust
+
+##### Setting Uniclust Blast Database
+
+##### Querying Uniclust with target proteome
+
+##### Building target proteome database
 
 
+## Protein-protein interaction set
 
-## Running the tests
+### Provider database and version
 
-After downloading the package and the serialized data, check the Run_Analsis jupyter notebook in order to use the pipeline.
+### Indentify subset of relevant interaction
 
-Serialized files contain :
+#### Blast runs array
 
->indexR6
-
->>List of the full proteome of our organism
-
->newDic.json
-
->>Dictionnary containing all interaction extracted from Intact (physical interactions with Uniprot ID)
-
->FullOmegaSet_coverage.json
-
->>Contains all information required to build the graph
-
->divKnownR6.txt
-
->> <div><a href=http://www.uniprot.org/uniprot/?query=taxonomy:%22Streptococcus%20pneumoniae%20(strain%20ATCC%20BAA-255%20/%20R6)%20[171101]%22+go:51301> File download from uniprot </a></div>
+#### Post processing
 
 
+## Linking Target Proteome with experimental interaction
 
-At the end, you should be able to observe some graphs corresponding to the first neighbors of each proteins of interest.
+### Modeling interaction in target proteome
 
-These are the proteins-proteins predicted interactions in the genome of your organism.
+#### Algorithmic
 
+#### Edge triming
 
-## Deployment
+#### Seed pruning
 
-If you want to use this pipeline with your own data set, make sure to check all input format.
+### Enriching target proteome ppi with uniprot information
 
-
-## Built With
-
-* [Jupyter](http://jupyter.org/) - An open-source web application
-
-
-
-## Authors
-
-* **Loïc Barlet** - *Initial work* - [LoBarlet](https://github.com/LoBarlet)
-* **Mohamed Bachir-Cherif** - *Initial work* - [mbachircherif](https://github.com/mbachircherif)
-* **Guillaume Launay** - *Initial work* - [glaunay](https://github.com/glaunay)
-
-
-
+### Visualizing the network
