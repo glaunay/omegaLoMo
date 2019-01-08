@@ -73,6 +73,8 @@ Edge is a list of 2-tuples
 2-tuples can be invalidated if they violate trim conditions
 
 
+
+
 networkx like graph can be obtained by filtering the complete graph based on egde, node properties
 
 #### Edge triming
