@@ -317,8 +317,8 @@ class HoParameterSet:
             #print (loHparam.simPct, loHparam.idPct, loHparam.cvPct)
             #print (hiHparam.simPct, hiHparam.idPct, hiHparam.cvPct)
             
-            loHparam.valid = loHparam.simPct > simPct and loHparam.idPct > idPct and loHparam.cvPct > cvPct
-            hiHparam.valid = hiHparam.simPct > simPct and hiHparam.idPct > idPct and hiHparam.cvPct > cvPct
+            loHparam.valid = loHparam.simPct >= simPct and loHparam.idPct >= idPct and loHparam.cvPct >= cvPct
+            hiHparam.valid = hiHparam.simPct >= simPct and hiHparam.idPct >= idPct and hiHparam.cvPct >= cvPct
             if not loHparam.valid or not hiHparam.valid:
                 loHparam.valid = False
                 hiHparam.valid = False
