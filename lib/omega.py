@@ -100,6 +100,8 @@ class homologTree(object):
         return d
 
 
+## Needs documentation and notebook API use case
+
 class omegaTopology(object):
     def __init__(self, mitabTopologyObject, homologySupportFile):
         self.hData = homologTree(fileName=homologySupportFile)
@@ -108,6 +110,9 @@ class omegaTopology(object):
     
     def jupyterNodeView(self): 
         return NodeView(self._G)
+
+    def resetNodeVisbility(self):
+        pass
 
     def prune(self, *seeds):
         self._G = self._g()
@@ -155,13 +160,14 @@ class omegaTopology(object):
             G.add_edge( n1, n2, data=edgeData )
         return G
         
+    ## List all nodes as primary key and set of templates as values
     @property
     def nodes(self):
         nodes = {}
-        for n1, n2, e in self:
-            if e.isEmpty:
-                continue
-            
+        #for n1, n2, e in self:
+        #    if e.isEmpty:
+        #        continue
+        for n1, n2, e in self.iterVisible():   
             templates = e.templates
             if n1 not in nodes:
                 nodes[n1] = set()
@@ -193,13 +199,18 @@ class omegaTopology(object):
         print(self.edgeNumber, " interactions unpacked from ", nbBase)
        # for x in  self.adjTree:
 
+    # B/C Effectively change the toplogy, 
+    # edges are set back to visible=True
+    # seed pruning will have to be made again
     def trimEdges(self, simPct = 0.0, idPct = 0.0, cvPct = 0.0):
         nDel = 0
+        nTot = 0
         for node1, node2, HoParameterSetObj in self:
+            nTot += 1
             HoParameterSetObj.trim(simPct=simPct, idPct=idPct, cvPct=cvPct)
             if HoParameterSetObj.isEmpty:
                 nDel += 1
-        print(nDel, ' interactions removed from total')
+        print(nDel, ' interactions trimmed from total ', nTot)
 
     def iterVisible(self):
         for x,y,e in self:
@@ -212,7 +223,7 @@ class omegaTopology(object):
 
     @property
     def edgeNumber(self):
-        return len([ e for x,y,e in self if not e.isEmpty ])
+        return len([ e for x,y,e in self.iterVisible() ])
 
     def __repr__(self):
         s = []
@@ -301,6 +312,7 @@ class HoParameterSet:
         self.highQueryParam.append( HoParameter(y) )
     
     def trim(self, simPct = 0.0, idPct = 0.0, cvPct = 0.0):
+        self.visible = True
         for loHparam, hiHparam in self:
             #print (loHparam.simPct, loHparam.idPct, loHparam.cvPct)
             #print (hiHparam.simPct, hiHparam.idPct, hiHparam.cvPct)
