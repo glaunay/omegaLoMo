@@ -187,8 +187,7 @@ class omegaTopology(object):
 # Build edge specifications
 # Edges carry homology relationship
     def buildEdges(self):
-        nbBase = 0
-        nbModel = 0
+        nbBase = 0        
         for baseIdA, baseIdB, datum in self.baseTopology:
             nbBase += 1           
             dataNewA = self.hData.getChildrenData(baseIdA)
@@ -224,6 +223,10 @@ class omegaTopology(object):
     @property
     def edgeNumber(self):
         return len([ e for x,y,e in self.iterVisible() ])
+    
+    @property
+    def nodeNumber(self):
+        return len(self.nodes.keys())
 
     def __repr__(self):
         s = []

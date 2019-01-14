@@ -63,13 +63,17 @@ A file pickle dump of an instance of a _mitabTopology_ Object which stores all e
 
 
 ### Modeling interaction in target proteome
-The complete network as an adjacency matrix along with edge information is always kept.
+
+_omega.Topology_ object provides the implemntation and the main interface to the inferred ppi network.
+
+The complete network is stored an adjacency matrix of edge information container.
+Column and row accessors are the target proteome uniprot identifier
+is always kept.
 An edge element has the folowing strucure:
 
+#### _omega.Topology_ Implementation
 
-#### Implementation
-
-Edge is a list of 2-tuples
+The edges are a list of 2-tuples
 2-tuples can be invalidated if they violate trim conditions
 
 
@@ -87,6 +91,21 @@ A node not connected to a visible edge is hidden
 A **previously trimmed** network can be pruned using a set of seed nodes.
 A path must exist between any node of the network and at least one seed node. Otherwise, the nodes is hidden.
 
+#### _omega.Topology_ attributes
+
+##### om.nodes
+Dictionary where primary keys are target proteome elements and values are set of their homologous templates.
+
+eg :
+
+```python 
+{ 'P0A496': {'O83239', 'P0A7Q6', 'P52864'},
+ 'P0A4A8': {'P17293', 'P53732', 'P75546'},
+    ...
+ 'P0A4D8': {'O25029', 'P0A8J8', 'P96614'},
+}
+```
+The `P0A496`is a network nodes and `{O83239, P0A7Q6, P52864}` are all its homologs involved in experimental protein-protein interactions.
 
 
 ### Enriching target proteome ppi with uniprot information
